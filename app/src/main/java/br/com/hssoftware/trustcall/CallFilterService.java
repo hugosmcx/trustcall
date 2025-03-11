@@ -1,11 +1,15 @@
 package br.com.hssoftware.trustcall;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.telecom.Call;
 import android.telecom.CallScreeningService;
 import android.util.Log;
+
+import androidx.core.content.ContextCompat;
 
 public class CallFilterService extends CallScreeningService {
 
@@ -13,13 +17,7 @@ public class CallFilterService extends CallScreeningService {
     public void onScreenCall(Call.Details callDetails) {
         String incomingNumber = callDetails.getHandle() != null ? callDetails.getHandle().getSchemeSpecificPart() : null;
 
-        if(incomingNumber != null) {
-            Log.d("HUGO", incomingNumber);
-        }else{
-            Log.d("HUGO", "Número nulo");
-        }
-
-        if (incomingNumber != null && !isNumberInContacts(this, incomingNumber)) {
+        if (temPermissao() && incomingNumber != null && !isNumberInContacts(this, incomingNumber)) {
             CallResponse response = new CallResponse.Builder()
                     .setDisallowCall(true)
                     .setRejectCall(true)
@@ -29,6 +27,10 @@ public class CallFilterService extends CallScreeningService {
 
             respondToCall(callDetails, response);
         }
+    }
+
+    private boolean temPermissao() {
+        return (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED);
     }
 
     private boolean isNumberInContacts(Context context, String phoneNumber) {
@@ -50,12 +52,10 @@ public class CallFilterService extends CallScreeningService {
 
                 // Verifica se o final do número do contato corresponde ao número recebido
                 if (phoneNumber.endsWith(contactNumber) || contactNumber.endsWith(phoneNumber)) {
-                    Log.d("HUGO", "Encontrou");
                     cursor.close();
                     return true;
                 }
             }
-            Log.d("HUGO", "Não encontrou");
             cursor.close();
         }
         return false;
