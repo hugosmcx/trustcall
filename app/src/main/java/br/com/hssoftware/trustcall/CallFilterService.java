@@ -2,6 +2,7 @@ package br.com.hssoftware.trustcall;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.provider.ContactsContract;
@@ -17,7 +18,7 @@ public class CallFilterService extends CallScreeningService {
     public void onScreenCall(Call.Details callDetails) {
         String incomingNumber = callDetails.getHandle() != null ? callDetails.getHandle().getSchemeSpecificPart() : null;
 
-        if (temPermissao() && incomingNumber != null && !isNumberInContacts(this, incomingNumber)) {
+        if (servicoAtivo() && temPermissao() && incomingNumber != null && !isNumberInContacts(this, incomingNumber)) {
             CallResponse response = new CallResponse.Builder()
                     .setDisallowCall(true)
                     .setRejectCall(true)
@@ -31,6 +32,11 @@ public class CallFilterService extends CallScreeningService {
 
     private boolean temPermissao() {
         return (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private boolean servicoAtivo(){
+        SharedPreferences prefs = getSharedPreferences("TRUST_CALL_PREFS", MODE_PRIVATE);
+        return prefs.getBoolean("BLOQUEIO_ATIVO", false);
     }
 
     private boolean isNumberInContacts(Context context, String phoneNumber) {
