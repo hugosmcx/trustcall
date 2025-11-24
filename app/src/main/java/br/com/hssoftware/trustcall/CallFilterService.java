@@ -8,7 +8,6 @@ import android.database.Cursor;
 import android.provider.ContactsContract;
 import android.telecom.Call;
 import android.telecom.CallScreeningService;
-import android.util.Log;
 
 import androidx.core.content.ContextCompat;
 
