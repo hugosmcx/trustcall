@@ -1,3 +1,26 @@
 <resources>
     <string name="app_name">Trust Call</string>
+    <string name="app_tagline">Bloqueio inteligente de chamadas</string>
+
+    <string name="status_title_active">Proteção ativa</string>
+    <string name="status_title_inactive">Proteção desativada</string>
+    <string name="status_subtitle_active">Chamadas fora dos seus contatos estão sendo bloqueadas</string>
+    <string name="status_subtitle_inactive">Toque para ativar o bloqueio de chamadas desconhecidas</string>
+
+    <string name="notification_persistente_title">Notificação persistente</string>
+    <string name="notification_persistente_subtitle">Exibir o status do bloqueador na barra de notificações</string>
+
+    <string name="permissao_subtitle">Para que o App funcione, é necessário permitir o acesso aos seus contatos</string>
+    <string name="permissao_button">Permitir acesso</string>
+
+    <string name="config_subtitle">Defina o Trust Call como o App padrão de Filtro de Chamadas e SPAM nas configurações do sistema</string>
+    <string name="config_button">Abrir configurações</string>
+
+    <string name="notification_channel_name">Status do Bloqueador</string>
+    <string name="notification_channel_desc">Mostra o status atual do bloqueador de chamadas</string>
+    <string name="notification_title">Trust Call</string>
+    <string name="notification_text_active">Proteção ativa · chamadas desconhecidas bloqueadas</string>
+    <string name="notification_text_inactive">Proteção desativada</string>
+    <string name="action_disable_blocker">Desativar</string>
+    <string name="action_enable_blocker">Ativar</string>
 </resources>
