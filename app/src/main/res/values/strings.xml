@@ -2,10 +2,20 @@
     <string name="app_name">Trust Call</string>
     <string name="app_tagline">Bloqueio inteligente de chamadas</string>
 
+    <string name="nav_home">Início</string>
+    <string name="nav_history">Histórico</string>
+
     <string name="status_title_active">Proteção ativa</string>
     <string name="status_title_inactive">Proteção desativada</string>
     <string name="status_subtitle_active">Chamadas fora dos seus contatos estão sendo bloqueadas</string>
     <string name="status_subtitle_inactive">Toque para ativar o bloqueio de chamadas desconhecidas</string>
+
+    <string name="chips_title">Bloquear chamadas de</string>
+    <string name="chip_desconhecidos">Desconhecidos</string>
+    <string name="chip_ocultos">Números ocultos</string>
+    <string name="chip_internacionais">Internacionais</string>
+
+    <string name="linhas_title">Bloquear chamadas nas linhas</string>
 
     <string name="notification_persistente_title">Notificação persistente</string>
     <string name="notification_persistente_subtitle">Exibir o status do bloqueador na barra de notificações</string>
@@ -13,14 +23,68 @@
     <string name="permissao_subtitle">Para que o App funcione, é necessário permitir o acesso aos seus contatos</string>
     <string name="permissao_button">Permitir acesso</string>
 
-    <string name="config_subtitle">Defina o Trust Call como o App padrão de Filtro de Chamadas e SPAM nas configurações do sistema</string>
-    <string name="config_button">Abrir configurações</string>
+    <string name="config_subtitle">É necessário definir o Trust Call como o App Identificador de Chamada e Spam</string>
+    <string name="config_button">Definir agora</string>
 
     <string name="notification_channel_name">Status do Bloqueador</string>
     <string name="notification_channel_desc">Mostra o status atual do bloqueador de chamadas</string>
     <string name="notification_title">Trust Call</string>
-    <string name="notification_text_active">Proteção ativa · chamadas desconhecidas bloqueadas</string>
     <string name="notification_text_inactive">Proteção desativada</string>
     <string name="action_disable_blocker">Desativar</string>
     <string name="action_enable_blocker">Ativar</string>
+
+    <plurals name="notification_text_active">
+        <item quantity="one">Proteção ativa · %d chamada bloqueada</item>
+        <item quantity="other">Proteção ativa · %d chamadas bloqueadas</item>
+    </plurals>
+
+    <string name="reason_lista_negra">Lista negra</string>
+    <string name="reason_oculto">Número oculto</string>
+    <string name="reason_internacional">Internacional</string>
+    <string name="reason_desconhecido">Desconhecido</string>
+
+    <string name="history_toggle_bloqueadas">Bloqueadas</string>
+    <string name="history_toggle_branca">Lista branca</string>
+    <string name="history_toggle_negra">Lista negra</string>
+
+    <string name="history_empty">Nenhuma chamada bloqueada ainda</string>
+    <string name="list_empty_branca">Nenhum número na lista branca</string>
+    <string name="list_empty_negra">Nenhum número na lista negra</string>
+
+    <string name="numero_oculto_label">Número oculto</string>
+    <string name="action_add_whitelist">Adicionar à lista branca</string>
+    <string name="action_add_blacklist">Adicionar à lista negra</string>
+    <string name="action_remove_number">Remover</string>
+
+    <string name="add_number_title_branca">Adicionar à lista branca</string>
+    <string name="add_number_title_negra">Adicionar à lista negra</string>
+    <string name="add_number_hint">Número de telefone</string>
+    <string name="add_number_confirm">Adicionar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="fab_add_number">Adicionar número</string>
+
+    <string name="modo_bloquear">Bloquear</string>
+    <string name="modo_perguntar">Perguntar</string>
+
+    <string name="role_dialer_subtitle">Para atender ou recusar direto pela bolha ou notificação, defina o Trust Call como o App de Telefone padrão</string>
+    <string name="role_dialer_button">Definir como telefone padrão</string>
+
+    <string name="overlay_subtitle">Permita que o Trust Call apareça sobre outros apps para mostrar a bolha de chamada</string>
+    <string name="overlay_button">Permitir sobreposição</string>
+
+    <string name="incoming_channel_name">Chamadas para decidir</string>
+    <string name="incoming_channel_desc">Chamadas que precisam da sua decisão: atender ou recusar</string>
+    <string name="incoming_call_subtitle">%1$s · toque para decidir</string>
+    <string name="incoming_call_subtitle_generico">Chamada recebida · toque para atender</string>
+    <string name="action_decline">Recusar</string>
+    <string name="action_answer">Atender</string>
+
+    <string name="ongoing_channel_name">Chamada em andamento</string>
+    <string name="ongoing_call_text">Chamada em andamento</string>
+    <string name="action_hangup">Desligar</string>
+
+    <string name="bubble_channel_name">Bolha de chamada</string>
+    <string name="bubble_notification_title">Aguardando sua decisão</string>
+
+    <string name="dialer_call_button">Ligar</string>
 </resources>

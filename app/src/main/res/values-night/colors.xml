@@ -17,4 +17,6 @@
 
     <color name="brand_warning">#F0C674</color>
     <color name="brand_warning_container">#3D2F10</color>
+
+    <color name="brand_danger">#FF6B6B</color>
 </resources>

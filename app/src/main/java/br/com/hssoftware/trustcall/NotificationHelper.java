@@ -62,9 +62,14 @@ public class NotificationHelper {
                 context, 0, toggleIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        String statusText = bloqueioAtivo
-                ? context.getString(R.string.notification_text_active)
-                : context.getString(R.string.notification_text_inactive);
+        String statusText;
+        if (bloqueioAtivo) {
+            int totalBloqueadas = (int) TrustCallRepository.getInstance(context).getHistoryCount();
+            statusText = context.getResources().getQuantityString(
+                    R.plurals.notification_text_active, totalBloqueadas, totalBloqueadas);
+        } else {
+            statusText = context.getString(R.string.notification_text_inactive);
+        }
         String actionLabel = bloqueioAtivo
                 ? context.getString(R.string.action_disable_blocker)
                 : context.getString(R.string.action_enable_blocker);

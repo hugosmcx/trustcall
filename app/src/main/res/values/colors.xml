@@ -20,4 +20,6 @@
 
     <color name="brand_warning">#B7791F</color>
     <color name="brand_warning_container">#FCEFCC</color>
+
+    <color name="brand_danger">#D32F2F</color>
 </resources>
