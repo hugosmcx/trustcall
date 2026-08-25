@@ -22,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.List;
+import java.util.Map;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -56,6 +57,7 @@ public class HomeFragment extends Fragment {
     private MaterialCardView cardSobreposicao;
     private MaterialCardView cardLinhas;
     private LinearLayout linhasContainer;
+    private boolean permissaoTelefoniaSolicitada = false;
 
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
 
@@ -82,10 +84,13 @@ public class HomeFragment extends Fragment {
                 atualizarCardsConfiguracao();
             });
 
-    private final ActivityResultLauncher<String> phoneStatePermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestPermission(),
-            granted -> {
-                AppLogger.log(requireContext(), "HomeFragment", "Permissão READ_PHONE_STATE: " + (granted ? "concedida" : "negada"));
+    private final ActivityResultLauncher<String[]> telefoniaPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            resultados -> {
+                for (Map.Entry<String, Boolean> entrada : resultados.entrySet()) {
+                    AppLogger.log(requireContext(), "HomeFragment", "Permissão " + entrada.getKey() + ": "
+                            + (entrada.getValue() ? "concedida" : "negada"));
+                }
                 configurarLinhas();
             });
 
@@ -163,6 +168,7 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.linkAjudaSobreposicao).setOnClickListener(v ->
                 mostrarAjudaPermissaoRestrita(getString(R.string.overlay_button)));
 
+        solicitarPermissoesTelefonia();
         configurarLinhas();
 
         switchServico.setChecked(servicoAtivo());
@@ -209,9 +215,25 @@ public class HomeFragment extends Fragment {
         configurarLinhas();
     }
 
+    private void solicitarPermissoesTelefonia() {
+        boolean temEstado = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
+        boolean temNumeros = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_NUMBERS) == PackageManager.PERMISSION_GRANTED;
+        boolean temAtender = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ANSWER_PHONE_CALLS) == PackageManager.PERMISSION_GRANTED;
+
+        if ((!temEstado || !temNumeros || !temAtender) && !permissaoTelefoniaSolicitada) {
+            permissaoTelefoniaSolicitada = true;
+            telefoniaPermissionLauncher.launch(new String[]{
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.READ_PHONE_NUMBERS,
+                    Manifest.permission.ANSWER_PHONE_CALLS});
+        }
+    }
+
     private void configurarLinhas() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE);
+        boolean temEstado = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
+
+        if (!temEstado) {
+            cardLinhas.setVisibility(View.GONE);
             return;
         }
 

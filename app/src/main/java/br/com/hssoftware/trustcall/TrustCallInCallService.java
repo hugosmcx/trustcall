@@ -3,14 +3,12 @@ package br.com.hssoftware.trustcall;
 import android.net.Uri;
 import android.telecom.Call;
 import android.telecom.InCallService;
-import android.telecom.PhoneAccountHandle;
 
 public class TrustCallInCallService extends InCallService {
 
     private static TrustCallInCallService instancia;
 
     private Call chamadaAtual;
-    private final CallDecisionEngine decisionEngine = new CallDecisionEngine();
 
     private final Call.Callback callCallback = new Call.Callback() {
         @Override
@@ -52,7 +50,6 @@ public class TrustCallInCallService extends InCallService {
     private void tratarEstado(Call call, int state) {
         if (state == Call.STATE_RINGING) {
             chamadaAtual = call;
-            avaliarChamadaRingente(call);
         } else if (state == Call.STATE_ACTIVE) {
             chamadaAtual = call;
             IncomingCallNotifier.cancelar(this);
@@ -71,37 +68,11 @@ public class TrustCallInCallService extends InCallService {
         return (numero == null || numero.isEmpty()) ? null : numero;
     }
 
-    private void avaliarChamadaRingente(Call call) {
-        String numeroOriginal = numeroDoCall(call);
-        boolean numeroOculto = numeroOriginal == null;
-        String numeroNormalizado = numeroOculto ? "" : PhoneUtils.normalizar(numeroOriginal);
-        PhoneAccountHandle accountHandle = call.getDetails().getAccountHandle();
-        String contaId = accountHandle != null ? accountHandle.getId() : null;
-
-        CallDecisionEngine.Decisao decisao = decisionEngine.decidir(this, numeroOriginal, numeroNormalizado, numeroOculto, contaId);
-
-        AppLogger.log(this, "TrustCallInCallService", "Chamada tocando " + (numeroOculto ? "oculta" : numeroOriginal)
-                + " conta=" + contaId + " -> " + decisao.acao);
-
-        if (decisao.acao == CallDecisionEngine.Acao.PERGUNTAR) {
-            IncomingCallNotifier.mostrar(this, numeroOriginal, decisao.motivo);
-            FloatingBubbleService.mostrar(this, numeroOriginal);
-        } else {
-            IncomingCallNotifier.mostrar(this, numeroOriginal, null);
-        }
-    }
-
     private void encerrarInteracao() {
         chamadaAtual = null;
         IncomingCallNotifier.cancelar(this);
         FloatingBubbleService.esconder(this);
         OngoingCallNotifier.cancelar(this);
-    }
-
-    public static void aceitarChamadaAtual() {
-        if (instancia != null && instancia.chamadaAtual != null) {
-            instancia.chamadaAtual.answer(0);
-        }
     }
 
     public static void recusarChamadaAtual() {

@@ -17,30 +17,40 @@ public class SimAccountsHelper {
 
     public static List<SimAccountEntry> listar(Context context) {
         List<SimAccountEntry> resultado = new ArrayList<>();
+
+        TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
+        if (telecomManager == null) {
+            AppLogger.log(context, "SimAccountsHelper", "TelecomManager indisponível");
+            return resultado;
+        }
+
+        List<PhoneAccountHandle> handles;
         try {
-            TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
-            if (telecomManager == null) {
-                AppLogger.log(context, "SimAccountsHelper", "TelecomManager indisponível");
-                return resultado;
-            }
-
-            List<PhoneAccountHandle> handles = telecomManager.getCallCapablePhoneAccounts();
-            AppLogger.log(context, "SimAccountsHelper", "getCallCapablePhoneAccounts() retornou " + handles.size() + " conta(s)");
-
-            int indice = 1;
-            for (PhoneAccountHandle handle : handles) {
-                PhoneAccount account = telecomManager.getPhoneAccount(handle);
-                String label = (account != null && account.getLabel() != null)
-                        ? account.getLabel().toString()
-                        : ("SIM " + indice);
-                String subtitulo = (account != null && account.getShortDescription() != null)
-                        ? account.getShortDescription().toString()
-                        : "SIM " + indice;
-                resultado.add(new SimAccountEntry(handle.getId(), label, subtitulo));
-                indice++;
-            }
+            handles = telecomManager.getCallCapablePhoneAccounts();
         } catch (SecurityException e) {
-            AppLogger.logErro(context, "SimAccountsHelper", "Sem permissão para listar contas SIM", e);
+            AppLogger.logErro(context, "SimAccountsHelper", "Sem permissão para listar handles de conta", e);
+            return resultado;
+        }
+
+        AppLogger.log(context, "SimAccountsHelper", "getCallCapablePhoneAccounts() retornou " + handles.size() + " conta(s)");
+
+        int indice = 1;
+        for (PhoneAccountHandle handle : handles) {
+            String label = "SIM " + indice;
+            String subtitulo = "SIM " + indice;
+            try {
+                PhoneAccount account = telecomManager.getPhoneAccount(handle);
+                if (account != null && account.getLabel() != null) {
+                    label = account.getLabel().toString();
+                }
+                if (account != null && account.getShortDescription() != null) {
+                    subtitulo = account.getShortDescription().toString();
+                }
+            } catch (SecurityException e) {
+                AppLogger.logErro(context, "SimAccountsHelper", "Sem permissão para detalhes da conta " + handle.getId() + ", usando nome genérico", e);
+            }
+            resultado.add(new SimAccountEntry(handle.getId(), label, subtitulo));
+            indice++;
         }
         return resultado;
     }

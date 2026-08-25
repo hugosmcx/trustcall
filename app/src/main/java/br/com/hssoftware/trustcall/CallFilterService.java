@@ -42,6 +42,9 @@ public class CallFilterService extends CallScreeningService {
             TrustCallRepository repository = TrustCallRepository.getInstance(this);
             repository.addHistoryEntry(numeroOculto ? null : numeroOriginal, decisao.motivo);
             NotificationHelper.updateNotification(this);
+        } else if (decisao.acao == CallDecisionEngine.Acao.PERGUNTAR) {
+            IncomingCallNotifier.mostrar(this, numeroOculto ? null : numeroOriginal, decisao.motivo);
+            FloatingBubbleService.mostrar(this, numeroOculto ? null : numeroOriginal);
         }
     }
 

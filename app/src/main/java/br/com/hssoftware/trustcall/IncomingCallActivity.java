@@ -50,14 +50,14 @@ public class IncomingCallActivity extends AppCompatActivity {
         }
 
         findViewById(R.id.buttonAtender).setOnClickListener(v -> {
-            TrustCallInCallService.aceitarChamadaAtual();
+            CallActions.aceitar(this);
             IncomingCallNotifier.cancelar(this);
             FloatingBubbleService.esconder(this);
             finish();
         });
 
         findViewById(R.id.buttonRecusar).setOnClickListener(v -> {
-            TrustCallInCallService.recusarChamadaAtual();
+            CallActions.recusar(this);
             IncomingCallNotifier.cancelar(this);
             FloatingBubbleService.esconder(this);
             finish();

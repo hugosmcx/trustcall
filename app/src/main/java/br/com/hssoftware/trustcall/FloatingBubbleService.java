@@ -59,7 +59,7 @@ public class FloatingBubbleService extends Service {
         super.onCreate();
         criarCanal();
         startForeground(FOREGROUND_ID, criarNotificacaoSilenciosa(),
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
     }
 
@@ -146,13 +146,13 @@ public class FloatingBubbleService extends Service {
         });
 
         overlayView.findViewById(R.id.buttonAtenderBubble).setOnClickListener(v -> {
-            TrustCallInCallService.aceitarChamadaAtual();
+            CallActions.aceitar(this);
             IncomingCallNotifier.cancelar(this);
             stopSelf();
         });
 
         overlayView.findViewById(R.id.buttonRecusarBubble).setOnClickListener(v -> {
-            TrustCallInCallService.recusarChamadaAtual();
+            CallActions.recusar(this);
             IncomingCallNotifier.cancelar(this);
             stopSelf();
         });

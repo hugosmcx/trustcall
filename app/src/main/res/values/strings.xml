@@ -87,7 +87,7 @@
     <string name="modo_bloquear">Bloquear</string>
     <string name="modo_perguntar">Perguntar</string>
 
-    <string name="role_dialer_subtitle">Para atender ou recusar direto pela bolha ou notificação, defina o Trust Call como o App de Telefone padrão</string>
+    <string name="role_dialer_subtitle">Opcional: atender pela bolha/notificação já funciona sem isso. Só é necessário se você quiser recusar chamadas direto por lá também (nem todo aparelho permite)</string>
     <string name="role_dialer_button">Definir como telefone padrão</string>
 
     <string name="overlay_subtitle">Permita que o Trust Call apareça sobre outros apps para mostrar a bolha de chamada</string>

@@ -26,11 +26,11 @@ public class CallActionReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (ACTION_ATENDER.equals(action)) {
-            TrustCallInCallService.aceitarChamadaAtual();
+            CallActions.aceitar(context);
             IncomingCallNotifier.cancelar(context);
             FloatingBubbleService.esconder(context);
         } else if (ACTION_RECUSAR.equals(action)) {
-            TrustCallInCallService.recusarChamadaAtual();
+            CallActions.recusar(context);
             IncomingCallNotifier.cancelar(context);
             FloatingBubbleService.esconder(context);
         } else if (ACTION_ENCERRAR.equals(action)) {
