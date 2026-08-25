@@ -21,12 +21,18 @@ public class SimAccountsHelper {
             TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
             if (telecomManager == null) return resultado;
 
-            for (PhoneAccountHandle handle : telecomManager.getCallCapablePhoneAccounts()) {
+            List<PhoneAccountHandle> handles = telecomManager.getCallCapablePhoneAccounts();
+            int indice = 1;
+            for (PhoneAccountHandle handle : handles) {
                 PhoneAccount account = telecomManager.getPhoneAccount(handle);
                 String label = (account != null && account.getLabel() != null)
                         ? account.getLabel().toString()
-                        : handle.getId();
-                resultado.add(new SimAccountEntry(handle.getId(), label));
+                        : ("SIM " + indice);
+                String subtitulo = (account != null && account.getShortDescription() != null)
+                        ? account.getShortDescription().toString()
+                        : "SIM " + indice;
+                resultado.add(new SimAccountEntry(handle.getId(), label, subtitulo));
+                indice++;
             }
         } catch (SecurityException ignored) {
         }

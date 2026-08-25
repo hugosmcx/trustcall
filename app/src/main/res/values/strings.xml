@@ -16,6 +16,16 @@
     <string name="chip_internacionais">Internacionais</string>
 
     <string name="linhas_title">Bloquear chamadas nas linhas</string>
+    <string name="linha_generica">Linha</string>
+
+    <string name="ajuda_link_texto">Como permitir isso?</string>
+    <string name="ajuda_restrita_titulo">Como permitir</string>
+    <string name="ajuda_restrita_mensagem">1. Toque em \"%1$s\" novamente.\n\n2. Se aparecer o aviso \"O app não recebeu o acesso…\", toque em Fechar.\n\n3. Toque no botão abaixo para abrir as informações do Trust Call.\n\n4. Toque no menu (⋮) no canto superior direito da tela.\n\n5. Toque em \"Permitir configurações restritas\".\n\n6. Volte aqui e toque em \"%1$s\" de novo.</string>
+    <string name="ajuda_botao_abrir_config">Abrir informações do app</string>
+    <string name="ajuda_fechar">Entendi</string>
+
+    <string name="role_dialer_fallback_texto">Não funcionou? Definir pelas configurações do sistema</string>
+    <string name="role_dialer_indisponivel">Este dispositivo não permite definir o Trust Call como telefone padrão por aqui. Use o botão \"Definir pelas configurações do sistema\" abaixo.</string>
 
     <string name="notification_persistente_title">Notificação persistente</string>
     <string name="notification_persistente_subtitle">Exibir o status do bloqueador na barra de notificações</string>

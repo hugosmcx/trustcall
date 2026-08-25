@@ -589,6 +589,27 @@
                         android:text="@string/role_dialer_button"
                         app:cornerRadius="14dp" />
 
+                    <TextView
+                        android:id="@+id/linkAjudaTelefone"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
+                        android:padding="4dp"
+                        android:text="@string/ajuda_link_texto"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonTelefonePadraoFallback"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/role_dialer_fallback_texto"
+                        android:textSize="12sp" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -648,6 +669,18 @@
                         android:layout_marginTop="14dp"
                         android:text="@string/overlay_button"
                         app:cornerRadius="14dp" />
+
+                    <TextView
+                        android:id="@+id/linkAjudaSobreposicao"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="10dp"
+                        android:padding="4dp"
+                        android:text="@string/ajuda_link_texto"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

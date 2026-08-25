@@ -1,14 +1,17 @@
 package br.com.hssoftware.trustcall;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.role.RoleManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -66,6 +70,10 @@ public class HomeFragment extends Fragment {
     private final ActivityResultLauncher<Intent> dialerRoleLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> atualizarCardsConfiguracao());
+
+    private final ActivityResultLauncher<String> phoneStatePermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            granted -> configurarLinhas());
 
     @Nullable
     @Override
@@ -129,8 +137,17 @@ public class HomeFragment extends Fragment {
 
         view.findViewById(R.id.buttonTelefonePadrao).setOnClickListener(v -> solicitaPapelTelefonePadrao());
 
+        view.findViewById(R.id.linkAjudaTelefone).setOnClickListener(v ->
+                mostrarAjudaPermissaoRestrita(getString(R.string.role_dialer_button)));
+
+        view.findViewById(R.id.buttonTelefonePadraoFallback).setOnClickListener(v ->
+                startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)));
+
         view.findViewById(R.id.buttonSobreposicao).setOnClickListener(v ->
                 startActivity(FloatingBubbleService.criarIntentPermissao(requireContext())));
+
+        view.findViewById(R.id.linkAjudaSobreposicao).setOnClickListener(v ->
+                mostrarAjudaPermissaoRestrita(getString(R.string.overlay_button)));
 
         configurarLinhas();
 
@@ -179,6 +196,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void configurarLinhas() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE);
+            return;
+        }
+
         List<SimAccountEntry> contas = SimAccountsHelper.listar(requireContext());
 
         if (contas.size() < 2) {
@@ -193,15 +215,30 @@ public class HomeFragment extends Fragment {
         for (SimAccountEntry conta : contas) {
             View row = inflater.inflate(R.layout.item_sim_line, linhasContainer, false);
             TextView label = row.findViewById(R.id.textViewLinhaLabel);
+            TextView subtitulo = row.findViewById(R.id.textViewLinhaSubtitulo);
             MaterialSwitch switchLinha = row.findViewById(R.id.switchLinha);
 
             label.setText(conta.label);
+            subtitulo.setText(conta.subtitulo);
             switchLinha.setChecked(SimAccountsHelper.linhaAtiva(requireContext(), conta.id));
             switchLinha.setOnCheckedChangeListener((buttonView, isChecked) ->
                     SimAccountsHelper.setLinhaAtiva(requireContext(), contas, conta.id, isChecked));
 
             linhasContainer.addView(row);
         }
+    }
+
+    private void mostrarAjudaPermissaoRestrita(String nomeBotao) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.ajuda_restrita_titulo)
+                .setMessage(getString(R.string.ajuda_restrita_mensagem, nomeBotao))
+                .setPositiveButton(R.string.ajuda_botao_abrir_config, (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:" + requireContext().getPackageName()));
+                    startActivity(intent);
+                })
+                .setNegativeButton(R.string.ajuda_fechar, null)
+                .show();
     }
 
     private void atualizarStatusVisual(boolean ativo) {
@@ -247,7 +284,15 @@ public class HomeFragment extends Fragment {
 
     private void solicitaPapelTelefonePadrao() {
         RoleManager roleManager = requireContext().getSystemService(RoleManager.class);
-        dialerRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER));
+        if (roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+            Toast.makeText(requireContext(), R.string.role_dialer_indisponivel, Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            dialerRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER));
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), R.string.role_dialer_indisponivel, Toast.LENGTH_LONG).show();
+        }
     }
 
     private boolean papelIdentificadorConcedido() {
