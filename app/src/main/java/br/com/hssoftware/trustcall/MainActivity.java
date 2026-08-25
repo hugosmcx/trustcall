@@ -35,7 +35,15 @@ public class MainActivity extends AppCompatActivity {
         }
 
         bottomNavigation.setOnItemSelectedListener(item -> {
-            Fragment fragment = item.getItemId() == R.id.nav_history ? new HistoryFragment() : new HomeFragment();
+            int id = item.getItemId();
+            Fragment fragment;
+            if (id == R.id.nav_history) {
+                fragment = new HistoryFragment();
+            } else if (id == R.id.nav_diagnostico) {
+                fragment = new DiagnosticoFragment();
+            } else {
+                fragment = new HomeFragment();
+            }
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, fragment)
                     .commit();

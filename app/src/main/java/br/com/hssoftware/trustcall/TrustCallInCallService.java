@@ -23,6 +23,7 @@ public class TrustCallInCallService extends InCallService {
     public void onCreate() {
         super.onCreate();
         instancia = this;
+        AppLogger.log(this, "TrustCallInCallService", "Serviço criado (Telecom vinculou o app como InCallService)");
     }
 
     @Override
@@ -34,6 +35,7 @@ public class TrustCallInCallService extends InCallService {
     @Override
     public void onCallAdded(Call call) {
         super.onCallAdded(call);
+        AppLogger.log(this, "TrustCallInCallService", "onCallAdded estado=" + call.getState());
         call.registerCallback(callCallback);
         tratarEstado(call, call.getState());
     }
@@ -77,6 +79,9 @@ public class TrustCallInCallService extends InCallService {
         String contaId = accountHandle != null ? accountHandle.getId() : null;
 
         CallDecisionEngine.Decisao decisao = decisionEngine.decidir(this, numeroOriginal, numeroNormalizado, numeroOculto, contaId);
+
+        AppLogger.log(this, "TrustCallInCallService", "Chamada tocando " + (numeroOculto ? "oculta" : numeroOriginal)
+                + " conta=" + contaId + " -> " + decisao.acao);
 
         if (decisao.acao == CallDecisionEngine.Acao.PERGUNTAR) {
             IncomingCallNotifier.mostrar(this, numeroOriginal, decisao.motivo);

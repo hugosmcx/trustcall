@@ -4,6 +4,17 @@
 
     <string name="nav_home">Início</string>
     <string name="nav_history">Histórico</string>
+    <string name="nav_diagnostico">Diagnóstico</string>
+
+    <string name="diagnostico_subtitulo">Status do sistema e log de eventos, tudo num lugar só</string>
+    <string name="diagnostico_atualizar">Atualizar</string>
+    <string name="diagnostico_copiar">Copiar</string>
+    <string name="diagnostico_baixar">Baixar</string>
+    <string name="diagnostico_compartilhar">Compartilhar</string>
+    <string name="diagnostico_limpar_log">Limpar log</string>
+    <string name="diagnostico_copiado">Relatório copiado</string>
+    <string name="diagnostico_salvo">Salvo em Downloads: %1$s</string>
+    <string name="diagnostico_erro_salvar">Não foi possível salvar o arquivo</string>
 
     <string name="status_title_active">Proteção ativa</string>
     <string name="status_title_inactive">Proteção desativada</string>

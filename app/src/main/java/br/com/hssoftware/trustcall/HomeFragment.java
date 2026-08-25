@@ -61,19 +61,33 @@ public class HomeFragment extends Fragment {
 
     private final ActivityResultLauncher<String> contactsPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
-            granted -> atualizarCardsConfiguracao());
+            granted -> {
+                AppLogger.log(requireContext(), "HomeFragment", "Permissão contatos: " + (granted ? "concedida" : "negada"));
+                atualizarCardsConfiguracao();
+            });
 
     private final ActivityResultLauncher<Intent> callScreeningRoleLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> atualizarCardsConfiguracao());
+            result -> {
+                AppLogger.log(requireContext(), "HomeFragment", "Retorno pedido ROLE_CALL_SCREENING: resultCode=" + result.getResultCode()
+                        + " concedido=" + papelIdentificadorConcedido());
+                atualizarCardsConfiguracao();
+            });
 
     private final ActivityResultLauncher<Intent> dialerRoleLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> atualizarCardsConfiguracao());
+            result -> {
+                AppLogger.log(requireContext(), "HomeFragment", "Retorno pedido ROLE_DIALER: resultCode=" + result.getResultCode()
+                        + " concedido=" + papelTelefonePadraoConcedido());
+                atualizarCardsConfiguracao();
+            });
 
     private final ActivityResultLauncher<String> phoneStatePermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
-            granted -> configurarLinhas());
+            granted -> {
+                AppLogger.log(requireContext(), "HomeFragment", "Permissão READ_PHONE_STATE: " + (granted ? "concedida" : "negada"));
+                configurarLinhas();
+            });
 
     @Nullable
     @Override
@@ -202,6 +216,7 @@ public class HomeFragment extends Fragment {
         }
 
         List<SimAccountEntry> contas = SimAccountsHelper.listar(requireContext());
+        AppLogger.log(requireContext(), "HomeFragment", "Linhas SIM encontradas: " + contas.size());
 
         if (contas.size() < 2) {
             cardLinhas.setVisibility(View.GONE);
@@ -284,13 +299,17 @@ public class HomeFragment extends Fragment {
 
     private void solicitaPapelTelefonePadrao() {
         RoleManager roleManager = requireContext().getSystemService(RoleManager.class);
-        if (roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+        boolean disponivel = roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_DIALER);
+        AppLogger.log(requireContext(), "HomeFragment", "Solicitando ROLE_DIALER — isRoleAvailable=" + disponivel);
+
+        if (!disponivel) {
             Toast.makeText(requireContext(), R.string.role_dialer_indisponivel, Toast.LENGTH_LONG).show();
             return;
         }
         try {
             dialerRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER));
         } catch (Exception e) {
+            AppLogger.logErro(requireContext(), "HomeFragment", "Falha ao lançar pedido de ROLE_DIALER", e);
             Toast.makeText(requireContext(), R.string.role_dialer_indisponivel, Toast.LENGTH_LONG).show();
         }
     }

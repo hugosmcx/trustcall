@@ -40,7 +40,11 @@ public class FloatingBubbleService extends Service {
     }
 
     public static void mostrar(Context context, String numero) {
-        if (!temPermissao(context)) return;
+        if (!temPermissao(context)) {
+            AppLogger.log(context, "FloatingBubbleService", "Bolha não exibida: sem permissão de sobreposição");
+            return;
+        }
+        AppLogger.log(context, "FloatingBubbleService", "Exibindo bolha para " + numero);
         Intent intent = new Intent(context, FloatingBubbleService.class);
         intent.putExtra(EXTRA_NUMERO, numero);
         ContextCompat.startForegroundService(context, intent);

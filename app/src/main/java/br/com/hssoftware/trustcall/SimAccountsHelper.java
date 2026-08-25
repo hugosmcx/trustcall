@@ -19,9 +19,14 @@ public class SimAccountsHelper {
         List<SimAccountEntry> resultado = new ArrayList<>();
         try {
             TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
-            if (telecomManager == null) return resultado;
+            if (telecomManager == null) {
+                AppLogger.log(context, "SimAccountsHelper", "TelecomManager indisponível");
+                return resultado;
+            }
 
             List<PhoneAccountHandle> handles = telecomManager.getCallCapablePhoneAccounts();
+            AppLogger.log(context, "SimAccountsHelper", "getCallCapablePhoneAccounts() retornou " + handles.size() + " conta(s)");
+
             int indice = 1;
             for (PhoneAccountHandle handle : handles) {
                 PhoneAccount account = telecomManager.getPhoneAccount(handle);
@@ -34,7 +39,8 @@ public class SimAccountsHelper {
                 resultado.add(new SimAccountEntry(handle.getId(), label, subtitulo));
                 indice++;
             }
-        } catch (SecurityException ignored) {
+        } catch (SecurityException e) {
+            AppLogger.logErro(context, "SimAccountsHelper", "Sem permissão para listar contas SIM", e);
         }
         return resultado;
     }

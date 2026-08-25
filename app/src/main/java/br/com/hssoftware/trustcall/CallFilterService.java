@@ -12,7 +12,10 @@ public class CallFilterService extends CallScreeningService {
 
     @Override
     public void onScreenCall(Call.Details callDetails) {
-        if (!servicoAtivo()) return;
+        if (!servicoAtivo()) {
+            AppLogger.log(this, "CallFilterService", "Chamada ignorada: serviço desativado");
+            return;
+        }
 
         Uri handle = callDetails.getHandle();
         String numeroOriginal = handle != null ? handle.getSchemeSpecificPart() : null;
@@ -22,6 +25,9 @@ public class CallFilterService extends CallScreeningService {
         String contaId = accountHandle != null ? accountHandle.getId() : null;
 
         CallDecisionEngine.Decisao decisao = decisionEngine.decidir(this, numeroOriginal, numeroNormalizado, numeroOculto, contaId);
+
+        AppLogger.log(this, "CallFilterService", "Chamada " + (numeroOculto ? "oculta" : numeroOriginal)
+                + " conta=" + contaId + " -> " + decisao.acao + (decisao.motivo != null ? " (" + decisao.motivo + ")" : ""));
 
         if (decisao.acao == CallDecisionEngine.Acao.BLOQUEAR) {
             CallResponse response = new CallResponse.Builder()
