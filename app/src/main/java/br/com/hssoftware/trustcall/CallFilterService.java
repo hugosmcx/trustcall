@@ -42,6 +42,7 @@ public class CallFilterService extends CallScreeningService {
             TrustCallRepository repository = TrustCallRepository.getInstance(this);
             repository.addHistoryEntry(numeroOculto ? null : numeroOriginal, decisao.motivo);
             NotificationHelper.updateNotification(this);
+            TrustCallEvents.notificarHistoricoAtualizado();
         } else {
             respondToCall(callDetails, new CallResponse.Builder().setDisallowCall(false).build());
 

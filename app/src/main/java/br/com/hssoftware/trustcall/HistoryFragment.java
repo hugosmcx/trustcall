@@ -30,6 +30,7 @@ public class HistoryFragment extends Fragment {
     private Modo modoAtual = Modo.BLOQUEADAS;
 
     private TrustCallRepository repository;
+    private final TrustCallEvents.Listener historicoListener = this::atualizarLista;
 
     @Nullable
     @Override
@@ -63,7 +64,14 @@ public class HistoryFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        TrustCallEvents.registrarHistorico(historicoListener);
         atualizarLista();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        TrustCallEvents.removerHistorico(historicoListener);
     }
 
     private void atualizarLista() {

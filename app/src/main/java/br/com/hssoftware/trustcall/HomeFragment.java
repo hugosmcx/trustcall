@@ -59,6 +59,11 @@ public class HomeFragment extends Fragment {
     private LinearLayout linhasContainer;
     private boolean permissaoTelefoniaSolicitada = false;
 
+    private final TrustCallEvents.Listener servicoListener = () -> {
+        switchServico.setChecked(servicoAtivo());
+        atualizarStatusVisual(servicoAtivo());
+    };
+
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 101;
 
     private final ActivityResultLauncher<String> contactsPermissionLauncher = registerForActivityResult(
@@ -103,6 +108,11 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        view.findViewById(R.id.textViewAppTitle).setOnLongClickListener(v -> {
+            ((MainActivity) requireActivity()).abrirDiagnostico();
+            return true;
+        });
 
         switchServico = view.findViewById(R.id.switchServico);
         switchNotificacaoPersistente = view.findViewById(R.id.switchNotificacaoPersistente);
@@ -211,10 +221,17 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        TrustCallEvents.registrarServico(servicoListener);
         switchServico.setChecked(servicoAtivo());
         atualizarStatusVisual(servicoAtivo());
         atualizarCardsConfiguracao();
         configurarLinhas();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        TrustCallEvents.removerServico(servicoListener);
     }
 
     private void solicitarPermissoesTelefonia() {

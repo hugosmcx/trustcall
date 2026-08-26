@@ -50,4 +50,10 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
     }
+
+    public void abrirDiagnostico() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, new DiagnosticoFragment())
+                .commit();
+    }
 }

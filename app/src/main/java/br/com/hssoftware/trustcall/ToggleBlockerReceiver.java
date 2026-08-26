@@ -20,5 +20,6 @@ public class ToggleBlockerReceiver extends BroadcastReceiver {
         prefs.edit().putBoolean("BLOQUEIO_ATIVO", !bloqueioAtivo).apply();
 
         NotificationHelper.updateNotification(context);
+        TrustCallEvents.notificarServicoAtualizado();
     }
 }

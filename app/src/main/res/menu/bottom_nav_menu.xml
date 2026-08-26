@@ -11,5 +11,6 @@
     <item
         android:id="@+id/nav_diagnostico"
         android:icon="@drawable/ic_bug_report"
-        android:title="@string/nav_diagnostico" />
+        android:title="@string/nav_diagnostico"
+        android:visible="false" />
 </menu>
