@@ -50,6 +50,7 @@ public class TrustCallInCallService extends InCallService {
     private void tratarEstado(Call call, int state) {
         if (state == Call.STATE_RINGING) {
             chamadaAtual = call;
+            PendingBubbleHolder.consumir(this);
         } else if (state == Call.STATE_ACTIVE) {
             chamadaAtual = call;
             IncomingCallNotifier.cancelar(this);

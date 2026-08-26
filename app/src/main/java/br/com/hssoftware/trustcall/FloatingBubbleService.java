@@ -34,6 +34,8 @@ public class FloatingBubbleService extends Service {
     private static final String CHANNEL_ID = "trust_call_bubble";
     private static final int FOREGROUND_ID = 3001;
     private static final int MARGEM_BORDA_DP = 56;
+    private static final int ARRASTO_MINIMO_DP = 72;
+    private static final int TAMANHO_BOLHA_DP = 72;
 
     private WindowManager windowManager;
     private View bubbleView;
@@ -151,7 +153,7 @@ public class FloatingBubbleService extends Service {
         bubbleParams.gravity = Gravity.TOP | Gravity.START;
 
         DisplayMetrics metricas = getResources().getDisplayMetrics();
-        int tamanhoBolhaPx = (int) (56 * metricas.density);
+        int tamanhoBolhaPx = (int) (TAMANHO_BOLHA_DP * metricas.density);
         bubbleParams.x = metricas.widthPixels - tamanhoBolhaPx - (int) (16 * metricas.density);
         bubbleParams.y = (int) (160 * metricas.density);
 
@@ -163,7 +165,8 @@ public class FloatingBubbleService extends Service {
     private void configurarGestoBolha(View bubbleColapsada) {
         DisplayMetrics metricas = getResources().getDisplayMetrics();
         int margemBordaPx = (int) (MARGEM_BORDA_DP * metricas.density);
-        int tamanhoBolhaPx = (int) (56 * metricas.density);
+        int tamanhoBolhaPx = (int) (TAMANHO_BOLHA_DP * metricas.density);
+        int arrastoMinimoPx = (int) (ARRASTO_MINIMO_DP * metricas.density);
         int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
         Handler handler = new Handler(Looper.getMainLooper());
 
@@ -207,7 +210,9 @@ public class FloatingBubbleService extends Service {
                         bubbleParams.y = initialY + dy;
                         windowManager.updateViewLayout(bubbleView, bubbleParams);
 
-                        boolean pertoDaBorda = pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas);
+                        boolean arrastoSignificativo = distanciaArrasto(dx, dy) >= arrastoMinimoPx;
+                        boolean pertoDaBorda = arrastoSignificativo
+                                && pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas);
                         v.setAlpha(pertoDaBorda ? 0.55f : 1f);
                         return true;
 
@@ -218,7 +223,10 @@ public class FloatingBubbleService extends Service {
                         if (longPressDisparado) return true;
 
                         if (arrastou) {
-                            if (pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
+                            int dxFinal = (int) (event.getRawX() - initialTouchX);
+                            int dyFinal = (int) (event.getRawY() - initialTouchY);
+                            boolean arrastoSignificativo = distanciaArrasto(dxFinal, dyFinal) >= arrastoMinimoPx;
+                            if (arrastoSignificativo && pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
                                 acaoRecusarOuFechar();
                             }
                         } else {
@@ -229,6 +237,10 @@ public class FloatingBubbleService extends Service {
                 return false;
             }
         });
+    }
+
+    private double distanciaArrasto(int dx, int dy) {
+        return Math.hypot(dx, dy);
     }
 
     private boolean pertoDaBorda(WindowManager.LayoutParams params, int margemPx, int tamanhoBolhaPx, DisplayMetrics metricas) {
