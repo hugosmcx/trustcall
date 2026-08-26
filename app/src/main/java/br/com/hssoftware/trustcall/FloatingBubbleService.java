@@ -225,8 +225,8 @@ public class FloatingBubbleService extends Service {
                         if (arrastou) {
                             int dxFinal = (int) (event.getRawX() - initialTouchX);
                             int dyFinal = (int) (event.getRawY() - initialTouchY);
-                            boolean arrastoSignificativo = distanciaArrasto(dxFinal, dyFinal) >= arrastoMinimoPx;
-                            if (arrastoSignificativo && pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
+                            boolean arrastoFinalSignificativo = distanciaArrasto(dxFinal, dyFinal) >= arrastoMinimoPx;
+                            if (arrastoFinalSignificativo && pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
                                 acaoRecusarOuFechar();
                             }
                         } else {
