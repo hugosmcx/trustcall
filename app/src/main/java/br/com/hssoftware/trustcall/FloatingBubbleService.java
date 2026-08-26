@@ -3,6 +3,7 @@ package br.com.hssoftware.trustcall;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.app.role.RoleManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
@@ -151,11 +152,18 @@ public class FloatingBubbleService extends Service {
             stopSelf();
         });
 
-        overlayView.findViewById(R.id.buttonRecusarBubble).setOnClickListener(v -> {
-            CallActions.recusar(this);
-            IncomingCallNotifier.cancelar(this);
-            stopSelf();
-        });
+        View buttonRecusarBubble = overlayView.findViewById(R.id.buttonRecusarBubble);
+        RoleManager roleManager = getSystemService(RoleManager.class);
+        boolean recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+        if (recusarDisponivel) {
+            buttonRecusarBubble.setOnClickListener(v -> {
+                CallActions.recusar(this);
+                IncomingCallNotifier.cancelar(this);
+                stopSelf();
+            });
+        } else {
+            buttonRecusarBubble.setVisibility(View.GONE);
+        }
     }
 
     private void criarCanal() {

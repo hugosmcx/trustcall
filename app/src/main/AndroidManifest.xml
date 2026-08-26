@@ -81,11 +81,12 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="vnd.android.cursor.item/phone" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
         </activity>
-        <activity
-            android:name=".IncomingCallActivity"
-            android:exported="false"
-            android:excludeFromRecents="true" />
     </application>
 
 </manifest>

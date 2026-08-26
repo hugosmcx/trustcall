@@ -3,8 +3,8 @@ package br.com.hssoftware.trustcall;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.role.RoleManager;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Build;
 
 import androidx.annotation.Nullable;
@@ -38,16 +38,8 @@ public class IncomingCallNotifier {
                 ? context.getString(R.string.incoming_call_subtitle, context.getString(motivo.labelResId))
                 : context.getString(R.string.incoming_call_subtitle_generico);
 
-        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
-                context, 0, IncomingCallActivity.criarIntent(context, numero, motivo),
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
         PendingIntent atenderPendingIntent = PendingIntent.getBroadcast(
                 context, 1, CallActionReceiver.criarIntentAtender(context),
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        PendingIntent recusarPendingIntent = PendingIntent.getBroadcast(
-                context, 2, CallActionReceiver.criarIntentRecusar(context),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
@@ -58,11 +50,20 @@ public class IncomingCallNotifier {
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setOngoing(true)
                 .setAutoCancel(false)
-                .setFullScreenIntent(fullScreenPendingIntent, true)
-                .addAction(0, context.getString(R.string.action_decline), recusarPendingIntent)
                 .addAction(0, context.getString(R.string.action_answer), atenderPendingIntent);
 
+        RoleManager roleManager = context.getSystemService(RoleManager.class);
+        boolean recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+        if (recusarDisponivel) {
+            PendingIntent recusarPendingIntent = PendingIntent.getBroadcast(
+                    context, 2, CallActionReceiver.criarIntentRecusar(context),
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.addAction(0, context.getString(R.string.action_decline), recusarPendingIntent);
+        }
+
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build());
+        AppLogger.log(context, "IncomingCallNotifier", "Notificação exibida para " + numeroExibido
+                + " (recusar disponível=" + recusarDisponivel + ")");
     }
 
     public static void cancelar(Context context) {

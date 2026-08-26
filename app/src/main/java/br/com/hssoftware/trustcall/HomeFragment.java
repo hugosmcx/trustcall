@@ -198,11 +198,13 @@ public class HomeFragment extends Fragment {
         chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs().edit().putBoolean(chaveFiltro, isChecked).apply();
             row.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+            atualizarStatusVisual(servicoAtivo());
         });
 
         toggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) return;
             prefs().edit().putString(chaveModo, checkedId == buttonPerguntar ? "PERGUNTAR" : "BLOQUEAR").apply();
+            atualizarStatusVisual(servicoAtivo());
         });
     }
 
@@ -280,7 +282,7 @@ public class HomeFragment extends Fragment {
 
     private void atualizarStatusVisual(boolean ativo) {
         textViewStatusTitle.setText(ativo ? R.string.status_title_active : R.string.status_title_inactive);
-        textViewStatusSubtitle.setText(ativo ? R.string.status_subtitle_active : R.string.status_subtitle_inactive);
+        textViewStatusSubtitle.setText(ativo ? calcularSubtituloStatus() : getString(R.string.status_subtitle_inactive));
 
         int corIcone = ContextCompat.getColor(requireContext(), ativo ? R.color.brand_success : R.color.brand_warning);
         int corFundo = ContextCompat.getColor(requireContext(), ativo ? R.color.brand_success_container : R.color.brand_warning_container);
@@ -290,6 +292,31 @@ public class HomeFragment extends Fragment {
         Drawable fundoChip = iconChipStatus.getBackground().mutate();
         fundoChip.setTint(corFundo);
         iconChipStatus.setBackground(fundoChip);
+    }
+
+    private String calcularSubtituloStatus() {
+        SharedPreferences prefs = prefs();
+        String[][] criterios = {
+                {"FILTRO_DESCONHECIDOS", "MODO_DESCONHECIDOS", "true"},
+                {"FILTRO_OCULTOS", "MODO_OCULTOS", "false"},
+                {"FILTRO_INTERNACIONAL", "MODO_INTERNACIONAL", "false"},
+        };
+
+        boolean algumBloquear = false;
+        boolean algumPerguntar = false;
+        for (String[] criterio : criterios) {
+            boolean habilitado = prefs.getBoolean(criterio[0], Boolean.parseBoolean(criterio[2]));
+            if (!habilitado) continue;
+            if ("PERGUNTAR".equals(prefs.getString(criterio[1], "BLOQUEAR"))) {
+                algumPerguntar = true;
+            } else {
+                algumBloquear = true;
+            }
+        }
+
+        if (algumPerguntar && algumBloquear) return getString(R.string.status_subtitle_misto);
+        if (algumPerguntar) return getString(R.string.status_subtitle_identificando);
+        return getString(R.string.status_subtitle_active);
     }
 
     private void solicitaPermissaoNotificacaoENotifica() {

@@ -25,6 +25,7 @@ public class CallActionReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        AppLogger.log(context, "CallActionReceiver", "onReceive action=" + action);
         if (ACTION_ATENDER.equals(action)) {
             CallActions.aceitar(context);
             IncomingCallNotifier.cancelar(context);

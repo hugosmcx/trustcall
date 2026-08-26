@@ -19,9 +19,11 @@
     <string name="status_title_active">Proteção ativa</string>
     <string name="status_title_inactive">Proteção desativada</string>
     <string name="status_subtitle_active">Chamadas fora dos seus contatos estão sendo bloqueadas</string>
-    <string name="status_subtitle_inactive">Toque para ativar o bloqueio de chamadas desconhecidas</string>
+    <string name="status_subtitle_inactive">Toque para ativar a proteção de chamadas</string>
+    <string name="status_subtitle_identificando">Chamadas suspeitas são identificadas antes de você decidir</string>
+    <string name="status_subtitle_misto">Algumas chamadas são bloqueadas, outras pedem sua decisão</string>
 
-    <string name="chips_title">Bloquear chamadas de</string>
+    <string name="chips_title">Verificar chamadas de</string>
     <string name="chip_desconhecidos">Desconhecidos</string>
     <string name="chip_ocultos">Números ocultos</string>
     <string name="chip_internacionais">Internacionais</string>
