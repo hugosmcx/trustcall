@@ -1,5 +1,6 @@
 package br.com.hssoftware.trustcall;
 
+import android.animation.ValueAnimator;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -37,14 +38,18 @@ public class FloatingBubbleService extends Service {
     private static final int ARRASTO_MINIMO_DP = 72;
     private static final int TAMANHO_BOLHA_DP = 72;
 
+    private static FloatingBubbleService instancia;
+
     private WindowManager windowManager;
     private View bubbleView;
     private View expandedView;
     private WindowManager.LayoutParams bubbleParams;
+    private ValueAnimator pulseAnimator;
 
     private String numeroAtual;
     private BlockReason motivoAtual;
     private boolean recusarDisponivel;
+    private boolean emChamada;
 
     public static boolean temPermissao(Context context) {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context);
@@ -75,9 +80,16 @@ public class FloatingBubbleService extends Service {
         context.stopService(new Intent(context, FloatingBubbleService.class));
     }
 
+    public static void marcarEmChamada(Context context, @Nullable String numero) {
+        if (instancia != null) {
+            instancia.ativarModoChamada(numero);
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        instancia = this;
         try {
             criarCanal();
             startForeground(FOREGROUND_ID, criarNotificacaoSilenciosa(),
@@ -119,10 +131,12 @@ public class FloatingBubbleService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        pararPulso();
         removerViewComSeguranca(expandedView);
         removerViewComSeguranca(bubbleView);
         expandedView = null;
         bubbleView = null;
+        if (instancia == this) instancia = null;
     }
 
     private void removerViewComSeguranca(View view) {
@@ -159,7 +173,58 @@ public class FloatingBubbleService extends Service {
 
         windowManager.addView(bubbleView, bubbleParams);
 
+        atualizarVisualBolha();
+        if (!emChamada) {
+            iniciarPulso(bubbleColapsada);
+        }
+
         configurarGestoBolha(bubbleColapsada);
+    }
+
+    private void ativarModoChamada(@Nullable String numero) {
+        if (numero != null) numeroAtual = numero;
+        emChamada = true;
+        pararPulso();
+        atualizarVisualBolha();
+        if (expandedView != null) {
+            removerViewComSeguranca(expandedView);
+            expandedView = null;
+            mostrarExpandido();
+        }
+    }
+
+    private void atualizarVisualBolha() {
+        if (bubbleView == null) return;
+        View bubbleColapsada = bubbleView.findViewById(R.id.bubbleColapsada);
+        bubbleColapsada.setBackgroundResource(
+                emChamada ? R.drawable.bg_bubble_ring_success : R.drawable.bg_bubble_ring_primary);
+    }
+
+    private void iniciarPulso(View bubbleColapsada) {
+        pararPulso();
+        ValueAnimator animator = ValueAnimator.ofFloat(1f, 1.12f);
+        animator.setDuration(900);
+        animator.setRepeatMode(ValueAnimator.REVERSE);
+        animator.setRepeatCount(ValueAnimator.INFINITE);
+        animator.addUpdateListener(a -> {
+            float escala = (float) a.getAnimatedValue();
+            bubbleColapsada.setScaleX(escala);
+            bubbleColapsada.setScaleY(escala);
+        });
+        animator.start();
+        pulseAnimator = animator;
+    }
+
+    private void pararPulso() {
+        if (pulseAnimator != null) {
+            pulseAnimator.cancel();
+            pulseAnimator = null;
+        }
+        if (bubbleView != null) {
+            View bubbleColapsada = bubbleView.findViewById(R.id.bubbleColapsada);
+            bubbleColapsada.setScaleX(1f);
+            bubbleColapsada.setScaleY(1f);
+        }
     }
 
     private void configurarGestoBolha(View bubbleColapsada) {
@@ -260,21 +325,42 @@ public class FloatingBubbleService extends Service {
         textViewNumero.setText(numeroAtual != null ? numeroAtual : getString(R.string.numero_oculto_label));
 
         TextView textViewMotivo = expandedView.findViewById(R.id.textViewMotivoExpandido);
-        textViewMotivo.setText(motivoAtual != null
-                ? getString(R.string.incoming_call_subtitle, getString(motivoAtual.labelResId))
-                : getString(R.string.incoming_call_subtitle_generico));
+        textViewMotivo.setText(emChamada
+                ? getString(R.string.ongoing_call_subtitle_bolha)
+                : (motivoAtual != null
+                        ? getString(R.string.incoming_call_subtitle, getString(motivoAtual.labelResId))
+                        : getString(R.string.incoming_call_subtitle_generico)));
 
-        expandedView.findViewById(R.id.buttonAtenderExpandido).setOnClickListener(v -> {
-            CallActions.aceitar(this);
-            IncomingCallNotifier.cancelar(this);
-            stopSelf();
-        });
+        View containerLigando = expandedView.findViewById(R.id.containerBotoesLigando);
+        View containerEmChamada = expandedView.findViewById(R.id.containerBotaoEmChamada);
+        View textEsconder = expandedView.findViewById(R.id.textViewEsconderExpandido);
 
-        View containerRecusar = expandedView.findViewById(R.id.containerRecusarExpandido);
-        if (recusarDisponivel) {
-            expandedView.findViewById(R.id.buttonRecusarExpandido).setOnClickListener(v -> acaoRecusarOuFechar());
+        if (emChamada) {
+            containerLigando.setVisibility(View.GONE);
+            containerEmChamada.setVisibility(View.VISIBLE);
+            textEsconder.setVisibility(View.VISIBLE);
+
+            expandedView.findViewById(R.id.buttonEncerrarExpandido).setOnClickListener(v -> {
+                TrustCallInCallService.encerrarChamadaAtual();
+                esconderExpandido();
+            });
+            textEsconder.setOnClickListener(v -> stopSelf());
         } else {
-            containerRecusar.setVisibility(View.GONE);
+            containerLigando.setVisibility(View.VISIBLE);
+            containerEmChamada.setVisibility(View.GONE);
+            textEsconder.setVisibility(View.GONE);
+
+            expandedView.findViewById(R.id.buttonAtenderExpandido).setOnClickListener(v -> {
+                CallActions.aceitar(this);
+                esconderExpandido();
+            });
+
+            View containerRecusar = expandedView.findViewById(R.id.containerRecusarExpandido);
+            if (recusarDisponivel) {
+                expandedView.findViewById(R.id.buttonRecusarExpandido).setOnClickListener(v -> acaoRecusarOuFechar());
+            } else {
+                containerRecusar.setVisibility(View.GONE);
+            }
         }
 
         expandedView.findViewById(R.id.textViewFecharExpandido).setOnClickListener(v -> esconderExpandido());
@@ -302,6 +388,10 @@ public class FloatingBubbleService extends Service {
     }
 
     private void acaoRecusarOuFechar() {
+        if (emChamada) {
+            stopSelf();
+            return;
+        }
         if (recusarDisponivel) {
             CallActions.recusar(this);
         }

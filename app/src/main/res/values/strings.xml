@@ -102,6 +102,8 @@
     <string name="action_decline">Recusar</string>
     <string name="action_answer">Atender</string>
     <string name="action_minimize">Minimizar</string>
+    <string name="action_hide_bubble">Esconder</string>
+    <string name="ongoing_call_subtitle_bolha">Chamada em andamento · toque para ver</string>
 
     <string name="ongoing_channel_name">Chamada em andamento</string>
     <string name="ongoing_call_text">Chamada em andamento</string>

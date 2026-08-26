@@ -4,12 +4,13 @@
     android:id="@+id/bubbleColapsada"
     android:layout_width="72dp"
     android:layout_height="72dp"
-    android:background="@drawable/bg_circle_bubble"
-    android:elevation="10dp">
+    android:background="@drawable/bg_bubble_ring_primary"
+    android:elevation="12dp">
 
     <ImageView
-        android:layout_width="34dp"
-        android:layout_height="34dp"
+        android:id="@+id/imageViewBolhaIcone"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_gravity="center"
         android:src="@drawable/ic_call"
         app:tint="#FFFFFFFF"

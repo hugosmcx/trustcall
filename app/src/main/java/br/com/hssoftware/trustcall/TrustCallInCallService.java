@@ -54,7 +54,7 @@ public class TrustCallInCallService extends InCallService {
         } else if (state == Call.STATE_ACTIVE) {
             chamadaAtual = call;
             IncomingCallNotifier.cancelar(this);
-            FloatingBubbleService.esconder(this);
+            FloatingBubbleService.marcarEmChamada(this, numeroDoCall(call));
             OngoingCallNotifier.mostrar(this, numeroDoCall(call));
         } else if (state == Call.STATE_DISCONNECTED) {
             if (call == chamadaAtual) {
