@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.role.RoleManager;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 
 import androidx.annotation.Nullable;
@@ -62,6 +63,10 @@ public class IncomingCallNotifier {
         NotificationCompat.CallStyle callStyle = NotificationCompat.CallStyle.forIncomingCall(
                 pessoa, recusarPendingIntent, atenderPendingIntent);
 
+        PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(
+                context, 3, new Intent(context, CallFullScreenTrampolineActivity.class),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_shield)
                 .setContentTitle(numeroExibido)
@@ -69,6 +74,7 @@ public class IncomingCallNotifier {
                 .setStyle(callStyle)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
+                .setFullScreenIntent(fullScreenPendingIntent, true)
                 .setOngoing(true)
                 .setAutoCancel(false);
 
