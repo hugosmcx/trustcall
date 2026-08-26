@@ -10,6 +10,8 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.Person;
+import androidx.core.graphics.drawable.IconCompat;
 
 public class IncomingCallNotifier {
 
@@ -42,27 +44,36 @@ public class IncomingCallNotifier {
                 context, 1, CallActionReceiver.criarIntentAtender(context),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+        RoleManager roleManager = context.getSystemService(RoleManager.class);
+        boolean recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+
+        PendingIntent recusarPendingIntent = null;
+        if (recusarDisponivel) {
+            recusarPendingIntent = PendingIntent.getBroadcast(
+                    context, 2, CallActionReceiver.criarIntentRecusar(context),
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        }
+
+        Person pessoa = new Person.Builder()
+                .setName(numeroExibido)
+                .setIcon(IconCompat.createWithResource(context, R.drawable.ic_shield))
+                .build();
+
+        NotificationCompat.CallStyle callStyle = NotificationCompat.CallStyle.forIncomingCall(
+                pessoa, recusarPendingIntent, atenderPendingIntent);
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_shield)
                 .setContentTitle(numeroExibido)
                 .setContentText(subtitulo)
+                .setStyle(callStyle)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setOngoing(true)
-                .setAutoCancel(false)
-                .addAction(0, context.getString(R.string.action_answer), atenderPendingIntent);
-
-        RoleManager roleManager = context.getSystemService(RoleManager.class);
-        boolean recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
-        if (recusarDisponivel) {
-            PendingIntent recusarPendingIntent = PendingIntent.getBroadcast(
-                    context, 2, CallActionReceiver.criarIntentRecusar(context),
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            builder.addAction(0, context.getString(R.string.action_decline), recusarPendingIntent);
-        }
+                .setAutoCancel(false);
 
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build());
-        AppLogger.log(context, "IncomingCallNotifier", "Notificação exibida para " + numeroExibido
+        AppLogger.log(context, "IncomingCallNotifier", "Notificação CallStyle exibida para " + numeroExibido
                 + " (recusar disponível=" + recusarDisponivel + ")");
     }
 

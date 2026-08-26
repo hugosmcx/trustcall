@@ -9,12 +9,17 @@ import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.TextView;
 
@@ -25,11 +30,19 @@ import androidx.core.content.ContextCompat;
 public class FloatingBubbleService extends Service {
 
     private static final String EXTRA_NUMERO = "numero";
+    private static final String EXTRA_MOTIVO = "motivo";
     private static final String CHANNEL_ID = "trust_call_bubble";
     private static final int FOREGROUND_ID = 3001;
+    private static final int MARGEM_BORDA_DP = 56;
 
     private WindowManager windowManager;
-    private View overlayView;
+    private View bubbleView;
+    private View expandedView;
+    private WindowManager.LayoutParams bubbleParams;
+
+    private String numeroAtual;
+    private BlockReason motivoAtual;
+    private boolean recusarDisponivel;
 
     public static boolean temPermissao(Context context) {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context);
@@ -40,15 +53,20 @@ public class FloatingBubbleService extends Service {
                 Uri.parse("package:" + context.getPackageName()));
     }
 
-    public static void mostrar(Context context, String numero) {
+    public static void mostrar(Context context, String numero, @Nullable BlockReason motivo) {
         if (!temPermissao(context)) {
             AppLogger.log(context, "FloatingBubbleService", "Bolha não exibida: sem permissão de sobreposição");
             return;
         }
-        AppLogger.log(context, "FloatingBubbleService", "Exibindo bolha para " + numero);
-        Intent intent = new Intent(context, FloatingBubbleService.class);
-        intent.putExtra(EXTRA_NUMERO, numero);
-        ContextCompat.startForegroundService(context, intent);
+        try {
+            Intent intent = new Intent(context, FloatingBubbleService.class);
+            intent.putExtra(EXTRA_NUMERO, numero);
+            if (motivo != null) intent.putExtra(EXTRA_MOTIVO, motivo.name());
+            ContextCompat.startForegroundService(context, intent);
+            AppLogger.log(context, "FloatingBubbleService", "Solicitado exibir bolha para " + numero);
+        } catch (Exception e) {
+            AppLogger.logErro(context, "FloatingBubbleService", "Falha ao iniciar serviço da bolha", e);
+        }
     }
 
     public static void esconder(Context context) {
@@ -58,16 +76,35 @@ public class FloatingBubbleService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        criarCanal();
-        startForeground(FOREGROUND_ID, criarNotificacaoSilenciosa(),
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        try {
+            criarCanal();
+            startForeground(FOREGROUND_ID, criarNotificacaoSilenciosa(),
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+
+            RoleManager roleManager = getSystemService(RoleManager.class);
+            recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+        } catch (Exception e) {
+            AppLogger.logErro(this, "FloatingBubbleService", "Falha ao iniciar serviço (onCreate)", e);
+            stopSelf();
+        }
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        String numero = intent != null ? intent.getStringExtra(EXTRA_NUMERO) : null;
-        exibirBolha(numero);
+        if (windowManager == null) {
+            return START_NOT_STICKY;
+        }
+        numeroAtual = intent != null ? intent.getStringExtra(EXTRA_NUMERO) : null;
+        String motivoNome = intent != null ? intent.getStringExtra(EXTRA_MOTIVO) : null;
+        motivoAtual = motivoNome != null ? BlockReason.valueOf(motivoNome) : null;
+
+        try {
+            exibirBolha();
+        } catch (Exception e) {
+            AppLogger.logErro(this, "FloatingBubbleService", "Falha ao exibir bolha (onStartCommand)", e);
+            stopSelf();
+        }
         return START_NOT_STICKY;
     }
 
@@ -80,90 +117,184 @@ public class FloatingBubbleService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (overlayView != null && windowManager != null) {
-            windowManager.removeView(overlayView);
-            overlayView = null;
+        removerViewComSeguranca(expandedView);
+        removerViewComSeguranca(bubbleView);
+        expandedView = null;
+        bubbleView = null;
+    }
+
+    private void removerViewComSeguranca(View view) {
+        if (view != null && windowManager != null) {
+            try {
+                windowManager.removeView(view);
+            } catch (Exception ignored) {
+            }
         }
     }
 
-    private void exibirBolha(String numero) {
-        if (overlayView != null) return;
+    private void exibirBolha() {
+        if (bubbleView != null) return;
 
-        overlayView = LayoutInflater.from(this).inflate(R.layout.view_call_bubble, null);
-
-        View bubbleColapsada = overlayView.findViewById(R.id.bubbleColapsada);
-        View bubbleExpandida = overlayView.findViewById(R.id.bubbleExpandida);
-        TextView textViewNumero = overlayView.findViewById(R.id.textViewNumeroBubble);
-        textViewNumero.setText(numero != null ? numero : getString(R.string.numero_oculto_label));
+        bubbleView = LayoutInflater.from(this).inflate(R.layout.view_call_bubble, null);
+        View bubbleColapsada = bubbleView.findViewById(R.id.bubbleColapsada);
 
         int tipoOverlay = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
                 : WindowManager.LayoutParams.TYPE_PHONE;
 
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+        bubbleParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 tipoOverlay,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
-        params.gravity = Gravity.TOP | Gravity.END;
-        params.x = 16;
-        params.y = 160;
+        bubbleParams.gravity = Gravity.TOP | Gravity.START;
 
-        windowManager.addView(overlayView, params);
+        DisplayMetrics metricas = getResources().getDisplayMetrics();
+        int tamanhoBolhaPx = (int) (56 * metricas.density);
+        bubbleParams.x = metricas.widthPixels - tamanhoBolhaPx - (int) (16 * metricas.density);
+        bubbleParams.y = (int) (160 * metricas.density);
+
+        windowManager.addView(bubbleView, bubbleParams);
+
+        configurarGestoBolha(bubbleColapsada);
+    }
+
+    private void configurarGestoBolha(View bubbleColapsada) {
+        DisplayMetrics metricas = getResources().getDisplayMetrics();
+        int margemBordaPx = (int) (MARGEM_BORDA_DP * metricas.density);
+        int tamanhoBolhaPx = (int) (56 * metricas.density);
+        int touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+        Handler handler = new Handler(Looper.getMainLooper());
 
         bubbleColapsada.setOnTouchListener(new View.OnTouchListener() {
             private int initialX, initialY;
             private float initialTouchX, initialTouchY;
             private boolean arrastou = false;
+            private boolean longPressDisparado = false;
+
+            private final Runnable longPressRunnable = () -> {
+                if (arrastou) return;
+                longPressDisparado = true;
+                bubbleColapsada.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                acaoRecusarOuFechar();
+            };
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        initialX = params.x;
-                        initialY = params.y;
+                        initialX = bubbleParams.x;
+                        initialY = bubbleParams.y;
                         initialTouchX = event.getRawX();
                         initialTouchY = event.getRawY();
                         arrastou = false;
+                        longPressDisparado = false;
+                        handler.postDelayed(longPressRunnable, ViewConfiguration.getLongPressTimeout());
                         return true;
+
                     case MotionEvent.ACTION_MOVE:
-                        int dx = (int) (initialTouchX - event.getRawX());
+                        if (longPressDisparado) return true;
+                        int dx = (int) (event.getRawX() - initialTouchX);
                         int dy = (int) (event.getRawY() - initialTouchY);
-                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) arrastou = true;
-                        params.x = initialX + dx;
-                        params.y = initialY + dy;
-                        windowManager.updateViewLayout(overlayView, params);
+                        if (!arrastou && (Math.abs(dx) > touchSlop || Math.abs(dy) > touchSlop)) {
+                            arrastou = true;
+                            handler.removeCallbacks(longPressRunnable);
+                        }
+                        if (!arrastou) return true;
+
+                        bubbleParams.x = initialX + dx;
+                        bubbleParams.y = initialY + dy;
+                        windowManager.updateViewLayout(bubbleView, bubbleParams);
+
+                        boolean pertoDaBorda = pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas);
+                        v.setAlpha(pertoDaBorda ? 0.55f : 1f);
                         return true;
+
                     case MotionEvent.ACTION_UP:
-                        if (!arrastou) {
-                            bubbleColapsada.setVisibility(View.GONE);
-                            bubbleExpandida.setVisibility(View.VISIBLE);
+                    case MotionEvent.ACTION_CANCEL:
+                        handler.removeCallbacks(longPressRunnable);
+                        v.setAlpha(1f);
+                        if (longPressDisparado) return true;
+
+                        if (arrastou) {
+                            if (pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
+                                acaoRecusarOuFechar();
+                            }
+                        } else {
+                            mostrarExpandido();
                         }
                         return true;
                 }
                 return false;
             }
         });
+    }
 
-        overlayView.findViewById(R.id.buttonAtenderBubble).setOnClickListener(v -> {
+    private boolean pertoDaBorda(WindowManager.LayoutParams params, int margemPx, int tamanhoBolhaPx, DisplayMetrics metricas) {
+        boolean pertoEsquerda = params.x <= margemPx;
+        boolean pertoDireita = params.x + tamanhoBolhaPx >= metricas.widthPixels - margemPx;
+        boolean pertoTopo = params.y <= margemPx;
+        boolean pertoFundo = params.y + tamanhoBolhaPx >= metricas.heightPixels - margemPx;
+        return pertoEsquerda || pertoDireita || pertoTopo || pertoFundo;
+    }
+
+    private void mostrarExpandido() {
+        if (expandedView != null) return;
+
+        expandedView = LayoutInflater.from(this).inflate(R.layout.view_call_expanded, null);
+
+        TextView textViewNumero = expandedView.findViewById(R.id.textViewNumeroExpandido);
+        textViewNumero.setText(numeroAtual != null ? numeroAtual : getString(R.string.numero_oculto_label));
+
+        TextView textViewMotivo = expandedView.findViewById(R.id.textViewMotivoExpandido);
+        textViewMotivo.setText(motivoAtual != null
+                ? getString(R.string.incoming_call_subtitle, getString(motivoAtual.labelResId))
+                : getString(R.string.incoming_call_subtitle_generico));
+
+        expandedView.findViewById(R.id.buttonAtenderExpandido).setOnClickListener(v -> {
             CallActions.aceitar(this);
             IncomingCallNotifier.cancelar(this);
             stopSelf();
         });
 
-        View buttonRecusarBubble = overlayView.findViewById(R.id.buttonRecusarBubble);
-        RoleManager roleManager = getSystemService(RoleManager.class);
-        boolean recusarDisponivel = roleManager != null && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+        View containerRecusar = expandedView.findViewById(R.id.containerRecusarExpandido);
         if (recusarDisponivel) {
-            buttonRecusarBubble.setOnClickListener(v -> {
-                CallActions.recusar(this);
-                IncomingCallNotifier.cancelar(this);
-                stopSelf();
-            });
+            expandedView.findViewById(R.id.buttonRecusarExpandido).setOnClickListener(v -> acaoRecusarOuFechar());
         } else {
-            buttonRecusarBubble.setVisibility(View.GONE);
+            containerRecusar.setVisibility(View.GONE);
         }
+
+        expandedView.findViewById(R.id.textViewFecharExpandido).setOnClickListener(v -> esconderExpandido());
+
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                        : WindowManager.LayoutParams.TYPE_PHONE,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT);
+
+        try {
+            windowManager.addView(expandedView, params);
+        } catch (Exception e) {
+            AppLogger.logErro(this, "FloatingBubbleService", "Falha ao expandir bolha", e);
+            expandedView = null;
+        }
+    }
+
+    private void esconderExpandido() {
+        removerViewComSeguranca(expandedView);
+        expandedView = null;
+    }
+
+    private void acaoRecusarOuFechar() {
+        if (recusarDisponivel) {
+            CallActions.recusar(this);
+        }
+        IncomingCallNotifier.cancelar(this);
+        stopSelf();
     }
 
     private void criarCanal() {

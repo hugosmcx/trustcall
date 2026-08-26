@@ -1,78 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content">
+    android:id="@+id/bubbleColapsada"
+    android:layout_width="56dp"
+    android:layout_height="56dp"
+    android:background="@drawable/bg_circle_bubble"
+    android:elevation="6dp">
 
-    <FrameLayout
-        android:id="@+id/bubbleColapsada"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:background="@drawable/bg_circle_bubble"
-        android:elevation="6dp">
-
-        <ImageView
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_call"
-            android:contentDescription="@string/fab_add_number" />
-    </FrameLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/bubbleExpandida"
-        android:layout_width="240dp"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="?attr/colorSurface">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <TextView
-                android:id="@+id/textViewNumeroBubble"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal"
-                android:gravity="center">
-
-                <ImageButton
-                    android:id="@+id/buttonRecusarBubble"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_circle_danger"
-                    android:src="@drawable/ic_call_end"
-                    android:padding="13dp"
-                    android:contentDescription="@string/action_decline" />
-
-                <View
-                    android:layout_width="24dp"
-                    android:layout_height="1dp" />
-
-                <ImageButton
-                    android:id="@+id/buttonAtenderBubble"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_circle_success"
-                    android:src="@drawable/ic_call"
-                    android:padding="13dp"
-                    android:contentDescription="@string/action_answer" />
-
-            </LinearLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    <ImageView
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_call"
+        android:contentDescription="@string/bubble_notification_title" />
 
 </FrameLayout>

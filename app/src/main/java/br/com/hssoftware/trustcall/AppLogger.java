@@ -30,8 +30,12 @@ public class AppLogger {
     }
 
     public static void logErro(Context context, String tag, String mensagem, Throwable t) {
-        String detalhe = t != null ? " — " + t.getClass().getSimpleName() + ": " + t.getMessage() : "";
-        log(context, tag, mensagem + detalhe);
+        if (t == null) {
+            log(context, tag, mensagem);
+            return;
+        }
+        String stackTrace = android.util.Log.getStackTraceString(t).trim().replace("\n", " | ");
+        log(context, tag, mensagem + " — " + stackTrace);
     }
 
     public static synchronized List<String> obterEntradas(Context context) {

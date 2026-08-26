@@ -48,7 +48,7 @@ public class CallFilterService extends CallScreeningService {
 
             if (decisao.acao == CallDecisionEngine.Acao.PERGUNTAR) {
                 IncomingCallNotifier.mostrar(this, numeroOculto ? null : numeroOriginal, decisao.motivo);
-                FloatingBubbleService.mostrar(this, numeroOculto ? null : numeroOriginal);
+                FloatingBubbleService.mostrar(this, numeroOculto ? null : numeroOriginal, decisao.motivo);
             }
         }
     }
