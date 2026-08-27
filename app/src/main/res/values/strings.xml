@@ -23,10 +23,18 @@
     <string name="status_subtitle_identificando">Chamadas suspeitas são identificadas antes de você decidir</string>
     <string name="status_subtitle_misto">Algumas chamadas são bloqueadas, outras pedem sua decisão</string>
 
-    <string name="chips_title">Verificar chamadas de</string>
+    <string name="chips_title">Configuração geral</string>
+    <string name="chips_subtitle">Verificar chamadas de</string>
     <string name="chip_desconhecidos">Desconhecidos</string>
     <string name="chip_ocultos">Números ocultos</string>
     <string name="chip_internacionais">Internacionais</string>
+    <string name="chip_ddd">Por DDD</string>
+    <string name="ddd_lista_vazia">Nenhum DDD adicionado</string>
+    <string name="ddd_adicionar">+ Adicionar DDD</string>
+    <string name="ddd_dialog_title">Bloquear DDD</string>
+    <string name="ddd_dialog_hint">Ex: 11</string>
+    <string name="ddd_invalido">DDD inválido — use 2 dígitos</string>
+    <string name="ddd_ja_adicionado">Esse DDD já está na lista</string>
 
     <string name="linhas_title">Bloquear chamadas nas linhas</string>
     <string name="linha_generica">Linha</string>
@@ -65,6 +73,7 @@
     <string name="reason_oculto">Número oculto</string>
     <string name="reason_internacional">Internacional</string>
     <string name="reason_desconhecido">Desconhecido</string>
+    <string name="reason_ddd_bloqueado">DDD bloqueado</string>
 
     <string name="history_toggle_bloqueadas">Bloqueadas</string>
     <string name="history_toggle_branca">Lista branca</string>

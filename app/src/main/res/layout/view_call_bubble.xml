@@ -2,15 +2,15 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/bubbleColapsada"
-    android:layout_width="72dp"
-    android:layout_height="72dp"
+    android:layout_width="84dp"
+    android:layout_height="84dp"
     android:background="@drawable/bg_bubble_ring_primary"
-    android:elevation="12dp">
+    android:elevation="14dp">
 
     <ImageView
         android:id="@+id/imageViewBolhaIcone"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
         android:layout_gravity="center"
         android:src="@drawable/ic_call"
         app:tint="#FFFFFFFF"

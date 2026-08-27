@@ -2,7 +2,6 @@ package br.com.hssoftware.trustcall;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.provider.ContactsContract;
@@ -36,7 +35,6 @@ public class CallDecisionEngine {
             return Decisao.permitir();
         }
 
-        SharedPreferences prefs = context.getSharedPreferences("TRUST_CALL_PREFS", Context.MODE_PRIVATE);
         TrustCallRepository repository = TrustCallRepository.getInstance(context);
 
         if (!numeroOculto && repository.isInList(numeroNormalizado, ListType.BRANCA)) {
@@ -48,27 +46,31 @@ public class CallDecisionEngine {
         }
 
         if (numeroOculto) {
-            if (prefs.getBoolean("FILTRO_OCULTOS", false)) {
-                return Decisao.of(acaoDoModo(prefs, "MODO_OCULTOS"), BlockReason.OCULTO);
+            if (ChipConfig.isFiltroAtivo(context, ChipConfig.CRITERIO_OCULTOS, contaId, false)) {
+                return Decisao.of(ChipConfig.getModo(context, ChipConfig.CRITERIO_OCULTOS, contaId), BlockReason.OCULTO);
             }
             return Decisao.permitir();
         }
 
-        if (prefs.getBoolean("FILTRO_INTERNACIONAL", false) && PhoneUtils.isInternacional(numeroOriginal)) {
-            return Decisao.of(acaoDoModo(prefs, "MODO_INTERNACIONAL"), BlockReason.INTERNACIONAL);
+        if (ChipConfig.isFiltroAtivo(context, ChipConfig.CRITERIO_INTERNACIONAL, contaId, false)
+                && PhoneUtils.isInternacional(numeroOriginal)) {
+            return Decisao.of(ChipConfig.getModo(context, ChipConfig.CRITERIO_INTERNACIONAL, contaId), BlockReason.INTERNACIONAL);
         }
 
-        if (prefs.getBoolean("FILTRO_DESCONHECIDOS", true)
+        if (ChipConfig.isFiltroAtivo(context, ChipConfig.CRITERIO_DDD, contaId, false)) {
+            String ddd = PhoneUtils.extrairDDD(numeroOriginal);
+            if (ddd != null && ChipConfig.getDddsBloqueados(context, contaId).contains(ddd)) {
+                return Decisao.of(ChipConfig.getModo(context, ChipConfig.CRITERIO_DDD, contaId), BlockReason.DDD_BLOQUEADO);
+            }
+        }
+
+        if (ChipConfig.isFiltroAtivo(context, ChipConfig.CRITERIO_DESCONHECIDOS, contaId, true)
                 && temPermissaoContatos(context)
                 && !isNumberInContacts(context, numeroOriginal)) {
-            return Decisao.of(acaoDoModo(prefs, "MODO_DESCONHECIDOS"), BlockReason.DESCONHECIDO);
+            return Decisao.of(ChipConfig.getModo(context, ChipConfig.CRITERIO_DESCONHECIDOS, contaId), BlockReason.DESCONHECIDO);
         }
 
         return Decisao.permitir();
-    }
-
-    private Acao acaoDoModo(SharedPreferences prefs, String chave) {
-        return "PERGUNTAR".equals(prefs.getString(chave, "BLOQUEAR")) ? Acao.PERGUNTAR : Acao.BLOQUEAR;
     }
 
     private boolean temPermissaoContatos(Context context) {

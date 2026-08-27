@@ -22,6 +22,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -36,7 +38,7 @@ public class FloatingBubbleService extends Service {
     private static final int FOREGROUND_ID = 3001;
     private static final int MARGEM_BORDA_DP = 56;
     private static final int ARRASTO_MINIMO_DP = 72;
-    private static final int TAMANHO_BOLHA_DP = 72;
+    private static final int TAMANHO_BOLHA_DP = 84;
 
     private static FloatingBubbleService instancia;
 
@@ -174,9 +176,18 @@ public class FloatingBubbleService extends Service {
         windowManager.addView(bubbleView, bubbleParams);
 
         atualizarVisualBolha();
-        if (!emChamada) {
-            iniciarPulso(bubbleColapsada);
-        }
+
+        bubbleColapsada.setScaleX(0f);
+        bubbleColapsada.setScaleY(0f);
+        bubbleColapsada.setAlpha(0f);
+        bubbleColapsada.animate()
+                .scaleX(1f).scaleY(1f).alpha(1f)
+                .setDuration(320)
+                .setInterpolator(new OvershootInterpolator(1.4f))
+                .withEndAction(() -> {
+                    if (!emChamada) iniciarPulso(bubbleColapsada);
+                })
+                .start();
 
         configurarGestoBolha(bubbleColapsada);
     }
@@ -268,6 +279,8 @@ public class FloatingBubbleService extends Service {
                         if (!arrastou && (Math.abs(dx) > touchSlop || Math.abs(dy) > touchSlop)) {
                             arrastou = true;
                             handler.removeCallbacks(longPressRunnable);
+                            pararPulso();
+                            v.animate().scaleX(1.1f).scaleY(1.1f).setDuration(140).start();
                         }
                         if (!arrastou) return true;
 
@@ -288,11 +301,19 @@ public class FloatingBubbleService extends Service {
                         if (longPressDisparado) return true;
 
                         if (arrastou) {
+                            v.animate().scaleX(1f).scaleY(1f).setDuration(160).start();
+
                             int dxFinal = (int) (event.getRawX() - initialTouchX);
                             int dyFinal = (int) (event.getRawY() - initialTouchY);
                             boolean arrastoFinalSignificativo = distanciaArrasto(dxFinal, dyFinal) >= arrastoMinimoPx;
                             if (arrastoFinalSignificativo && pertoDaBorda(bubbleParams, margemBordaPx, tamanhoBolhaPx, metricas)) {
                                 acaoRecusarOuFechar();
+                            } else {
+                                int alvoX = bordaMaisProxima(bubbleParams, tamanhoBolhaPx, metricas);
+                                animarSnapBorda(alvoX);
+                                if (!emChamada) {
+                                    handler.postDelayed(() -> iniciarPulso(bubbleColapsada), 300);
+                                }
                             }
                         } else {
                             mostrarExpandido();
@@ -306,6 +327,28 @@ public class FloatingBubbleService extends Service {
 
     private double distanciaArrasto(int dx, int dy) {
         return Math.hypot(dx, dy);
+    }
+
+    private int bordaMaisProxima(WindowManager.LayoutParams params, int tamanhoBolhaPx, DisplayMetrics metricas) {
+        int margemDescanso = (int) (16 * metricas.density);
+        int centro = params.x + tamanhoBolhaPx / 2;
+        boolean maisPertoEsquerda = centro < metricas.widthPixels / 2;
+        return maisPertoEsquerda ? margemDescanso : metricas.widthPixels - tamanhoBolhaPx - margemDescanso;
+    }
+
+    private void animarSnapBorda(int alvoX) {
+        if (bubbleParams == null || windowManager == null || bubbleView == null) return;
+        ValueAnimator anim = ValueAnimator.ofInt(bubbleParams.x, alvoX);
+        anim.setDuration(280);
+        anim.setInterpolator(new DecelerateInterpolator(1.5f));
+        anim.addUpdateListener(a -> {
+            bubbleParams.x = (int) a.getAnimatedValue();
+            try {
+                windowManager.updateViewLayout(bubbleView, bubbleParams);
+            } catch (Exception ignored) {
+            }
+        });
+        anim.start();
     }
 
     private boolean pertoDaBorda(WindowManager.LayoutParams params, int margemPx, int tamanhoBolhaPx, DisplayMetrics metricas) {
@@ -375,7 +418,9 @@ public class FloatingBubbleService extends Service {
                 PixelFormat.TRANSLUCENT);
 
         try {
+            expandedView.setAlpha(0f);
             windowManager.addView(expandedView, params);
+            expandedView.animate().alpha(1f).setDuration(180).start();
         } catch (Exception e) {
             AppLogger.logErro(this, "FloatingBubbleService", "Falha ao expandir bolha", e);
             expandedView = null;
@@ -383,8 +428,14 @@ public class FloatingBubbleService extends Service {
     }
 
     private void esconderExpandido() {
-        removerViewComSeguranca(expandedView);
+        if (expandedView == null) return;
+        View viewParaRemover = expandedView;
         expandedView = null;
+        viewParaRemover.animate()
+                .alpha(0f)
+                .setDuration(150)
+                .withEndAction(() -> removerViewComSeguranca(viewParaRemover))
+                .start();
     }
 
     private void acaoRecusarOuFechar() {

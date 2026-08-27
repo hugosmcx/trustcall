@@ -12,17 +12,22 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -31,9 +36,11 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
 public class HomeFragment extends Fragment {
@@ -46,9 +53,8 @@ public class HomeFragment extends Fragment {
     private TextView textViewStatusTitle;
     private TextView textViewStatusSubtitle;
 
-    private Chip chipDesconhecidos;
-    private Chip chipOcultos;
-    private Chip chipInternacionais;
+    private LinearLayout criteriosContainer;
+    private List<SimAccountEntry> contasAtuais = new ArrayList<>();
 
     private LinearLayout constraintLayoutBotoes;
     private MaterialCardView cardPermissao;
@@ -122,9 +128,7 @@ public class HomeFragment extends Fragment {
         textViewStatusTitle = view.findViewById(R.id.textViewStatusTitle);
         textViewStatusSubtitle = view.findViewById(R.id.textViewStatusSubtitle);
 
-        chipDesconhecidos = view.findViewById(R.id.chipDesconhecidos);
-        chipOcultos = view.findViewById(R.id.chipOcultos);
-        chipInternacionais = view.findViewById(R.id.chipInternacionais);
+        criteriosContainer = view.findViewById(R.id.criteriosContainer);
 
         constraintLayoutBotoes = view.findViewById(R.id.constraintLayoutBotoes);
         cardPermissao = view.findViewById(R.id.cardPermissao);
@@ -148,16 +152,6 @@ public class HomeFragment extends Fragment {
                 NotificationHelper.cancelNotification(requireContext());
             }
         });
-
-        configurarCriterio(view, chipDesconhecidos, "FILTRO_DESCONHECIDOS", true,
-                R.id.rowModoDesconhecidos, R.id.toggleModoDesconhecidos,
-                R.id.buttonModoDesconhecidosBloquear, R.id.buttonModoDesconhecidosPerguntar, "MODO_DESCONHECIDOS");
-        configurarCriterio(view, chipOcultos, "FILTRO_OCULTOS", false,
-                R.id.rowModoOcultos, R.id.toggleModoOcultos,
-                R.id.buttonModoOcultosBloquear, R.id.buttonModoOcultosPerguntar, "MODO_OCULTOS");
-        configurarCriterio(view, chipInternacionais, "FILTRO_INTERNACIONAL", false,
-                R.id.rowModoInternacionais, R.id.toggleModoInternacionais,
-                R.id.buttonModoInternacionaisBloquear, R.id.buttonModoInternacionaisPerguntar, "MODO_INTERNACIONAL");
 
         view.findViewById(R.id.buttonPermissaoContato).setOnClickListener(v ->
                 contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS));
@@ -193,28 +187,125 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private void configurarCriterio(View root, Chip chip, String chaveFiltro, boolean defaultFiltro,
-                                     int idRow, int idToggle, int idBloquear, int idPerguntar, String chaveModo) {
-        View row = root.findViewById(idRow);
-        MaterialButtonToggleGroup toggle = root.findViewById(idToggle);
-        int buttonBloquear = idBloquear;
-        int buttonPerguntar = idPerguntar;
+    private void configurarCriteriosPorChip(List<SimAccountEntry> contas) {
+        criteriosContainer.removeAllViews();
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
 
-        SharedPreferences prefs = prefs();
-        chip.setChecked(prefs.getBoolean(chaveFiltro, defaultFiltro));
+        if (contas.size() >= 2) {
+            for (SimAccountEntry conta : contas) {
+                View card = inflater.inflate(R.layout.item_criterios_chip, criteriosContainer, false);
+                TextView titulo = card.findViewById(R.id.textViewCriteriosTitulo);
+                titulo.setText(conta.label);
+                configurarCriteriosCard(card, conta.id);
+                criteriosContainer.addView(card);
+            }
+        } else {
+            View card = inflater.inflate(R.layout.item_criterios_chip, criteriosContainer, false);
+            TextView titulo = card.findViewById(R.id.textViewCriteriosTitulo);
+            titulo.setText(R.string.chips_title);
+            configurarCriteriosCard(card, null);
+            criteriosContainer.addView(card);
+        }
+
+        atualizarStatusVisual(servicoAtivo());
+    }
+
+    private void configurarCriteriosCard(View card, @Nullable String contaId) {
+        Chip chipDesconhecidos = card.findViewById(R.id.chipDesconhecidos);
+        Chip chipOcultos = card.findViewById(R.id.chipOcultos);
+        Chip chipInternacionais = card.findViewById(R.id.chipInternacionais);
+        Chip chipDdd = card.findViewById(R.id.chipDdd);
+
+        configurarCriterio(card, chipDesconhecidos, ChipConfig.CRITERIO_DESCONHECIDOS, true,
+                R.id.rowModoDesconhecidos, R.id.toggleModoDesconhecidos,
+                R.id.buttonModoDesconhecidosBloquear, R.id.buttonModoDesconhecidosPerguntar, contaId);
+        configurarCriterio(card, chipOcultos, ChipConfig.CRITERIO_OCULTOS, false,
+                R.id.rowModoOcultos, R.id.toggleModoOcultos,
+                R.id.buttonModoOcultosBloquear, R.id.buttonModoOcultosPerguntar, contaId);
+        configurarCriterio(card, chipInternacionais, ChipConfig.CRITERIO_INTERNACIONAL, false,
+                R.id.rowModoInternacionais, R.id.toggleModoInternacionais,
+                R.id.buttonModoInternacionaisBloquear, R.id.buttonModoInternacionaisPerguntar, contaId);
+        configurarCriterio(card, chipDdd, ChipConfig.CRITERIO_DDD, false,
+                R.id.rowModoDdd, R.id.toggleModoDdd,
+                R.id.buttonModoDddBloquear, R.id.buttonModoDddPerguntar, contaId);
+
+        configurarListaDdd(card, contaId);
+    }
+
+    private void configurarCriterio(View card, Chip chip, String criterio, boolean defaultFiltro,
+                                     int idRow, int idToggle, int idBloquear, int idPerguntar, @Nullable String contaId) {
+        View row = card.findViewById(idRow);
+        MaterialButtonToggleGroup toggle = card.findViewById(idToggle);
+
+        chip.setChecked(ChipConfig.isFiltroAtivo(requireContext(), criterio, contaId, defaultFiltro));
         row.setVisibility(chip.isChecked() ? View.VISIBLE : View.GONE);
-        toggle.check("PERGUNTAR".equals(prefs.getString(chaveModo, "BLOQUEAR")) ? buttonPerguntar : buttonBloquear);
+        toggle.check(ChipConfig.getModo(requireContext(), criterio, contaId) == CallDecisionEngine.Acao.PERGUNTAR
+                ? idPerguntar : idBloquear);
 
         chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            prefs().edit().putBoolean(chaveFiltro, isChecked).apply();
+            ChipConfig.setFiltroAtivo(requireContext(), criterio, contaId, isChecked);
             row.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             atualizarStatusVisual(servicoAtivo());
         });
 
         toggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
             if (!isChecked) return;
-            prefs().edit().putString(chaveModo, checkedId == buttonPerguntar ? "PERGUNTAR" : "BLOQUEAR").apply();
+            ChipConfig.setModo(requireContext(), criterio, contaId,
+                    checkedId == idPerguntar ? CallDecisionEngine.Acao.PERGUNTAR : CallDecisionEngine.Acao.BLOQUEAR);
             atualizarStatusVisual(servicoAtivo());
+        });
+    }
+
+    private void configurarListaDdd(View card, @Nullable String contaId) {
+        ChipGroup grupo = card.findViewById(R.id.chipGroupDddLista);
+        MaterialButton botaoAdicionar = card.findViewById(R.id.buttonAdicionarDdd);
+
+        Runnable[] atualizarChips = new Runnable[1];
+        atualizarChips[0] = () -> {
+            grupo.removeAllViews();
+            Set<String> ddds = new TreeSet<>(ChipConfig.getDddsBloqueados(requireContext(), contaId));
+            for (String ddd : ddds) {
+                Chip chipDdd = new Chip(requireContext());
+                chipDdd.setText(ddd);
+                chipDdd.setCheckable(false);
+                chipDdd.setCloseIconVisible(true);
+                chipDdd.setOnCloseIconClickListener(v -> {
+                    Set<String> atual = ChipConfig.getDddsBloqueados(requireContext(), contaId);
+                    atual.remove(ddd);
+                    ChipConfig.setDddsBloqueados(requireContext(), contaId, atual);
+                    atualizarChips[0].run();
+                });
+                grupo.addView(chipDdd);
+            }
+        };
+        atualizarChips[0].run();
+
+        botaoAdicionar.setOnClickListener(v -> {
+            EditText input = new EditText(requireContext());
+            input.setInputType(InputType.TYPE_CLASS_NUMBER);
+            input.setHint(R.string.ddd_dialog_hint);
+            int padding = (int) (20 * getResources().getDisplayMetrics().density);
+            input.setPadding(padding, padding, padding, padding);
+
+            new AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.ddd_dialog_title)
+                    .setView(input)
+                    .setPositiveButton(R.string.add_number_confirm, (dialog, which) -> {
+                        String valor = input.getText().toString().trim();
+                        if (!valor.matches("\\d{2}")) {
+                            Toast.makeText(requireContext(), R.string.ddd_invalido, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Set<String> atual = ChipConfig.getDddsBloqueados(requireContext(), contaId);
+                        if (!atual.add(valor)) {
+                            Toast.makeText(requireContext(), R.string.ddd_ja_adicionado, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        ChipConfig.setDddsBloqueados(requireContext(), contaId, atual);
+                        atualizarChips[0].run();
+                    })
+                    .setNegativeButton(R.string.cancel, null)
+                    .show();
         });
     }
 
@@ -251,37 +342,36 @@ public class HomeFragment extends Fragment {
     private void configurarLinhas() {
         boolean temEstado = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
 
-        if (!temEstado) {
+        List<SimAccountEntry> contas = temEstado ? SimAccountsHelper.listar(requireContext()) : new ArrayList<>();
+        if (temEstado) {
+            AppLogger.log(requireContext(), "HomeFragment", "Linhas SIM encontradas: " + contas.size());
+        }
+        contasAtuais = contas;
+
+        if (!temEstado || contas.size() < 2) {
             cardLinhas.setVisibility(View.GONE);
-            return;
+        } else {
+            cardLinhas.setVisibility(View.VISIBLE);
+            linhasContainer.removeAllViews();
+
+            LayoutInflater inflater = LayoutInflater.from(requireContext());
+            for (SimAccountEntry conta : contas) {
+                View row = inflater.inflate(R.layout.item_sim_line, linhasContainer, false);
+                TextView label = row.findViewById(R.id.textViewLinhaLabel);
+                TextView subtitulo = row.findViewById(R.id.textViewLinhaSubtitulo);
+                MaterialSwitch switchLinha = row.findViewById(R.id.switchLinha);
+
+                label.setText(conta.label);
+                subtitulo.setText(conta.subtitulo);
+                switchLinha.setChecked(SimAccountsHelper.linhaAtiva(requireContext(), conta.id));
+                switchLinha.setOnCheckedChangeListener((buttonView, isChecked) ->
+                        SimAccountsHelper.setLinhaAtiva(requireContext(), contas, conta.id, isChecked));
+
+                linhasContainer.addView(row);
+            }
         }
 
-        List<SimAccountEntry> contas = SimAccountsHelper.listar(requireContext());
-        AppLogger.log(requireContext(), "HomeFragment", "Linhas SIM encontradas: " + contas.size());
-
-        if (contas.size() < 2) {
-            cardLinhas.setVisibility(View.GONE);
-            return;
-        }
-
-        cardLinhas.setVisibility(View.VISIBLE);
-        linhasContainer.removeAllViews();
-
-        LayoutInflater inflater = LayoutInflater.from(requireContext());
-        for (SimAccountEntry conta : contas) {
-            View row = inflater.inflate(R.layout.item_sim_line, linhasContainer, false);
-            TextView label = row.findViewById(R.id.textViewLinhaLabel);
-            TextView subtitulo = row.findViewById(R.id.textViewLinhaSubtitulo);
-            MaterialSwitch switchLinha = row.findViewById(R.id.switchLinha);
-
-            label.setText(conta.label);
-            subtitulo.setText(conta.subtitulo);
-            switchLinha.setChecked(SimAccountsHelper.linhaAtiva(requireContext(), conta.id));
-            switchLinha.setOnCheckedChangeListener((buttonView, isChecked) ->
-                    SimAccountsHelper.setLinhaAtiva(requireContext(), contas, conta.id, isChecked));
-
-            linhasContainer.addView(row);
-        }
+        configurarCriteriosPorChip(contas);
     }
 
     private void mostrarAjudaPermissaoRestrita(String nomeBotao) {
@@ -312,22 +402,32 @@ public class HomeFragment extends Fragment {
     }
 
     private String calcularSubtituloStatus() {
-        SharedPreferences prefs = prefs();
-        String[][] criterios = {
-                {"FILTRO_DESCONHECIDOS", "MODO_DESCONHECIDOS", "true"},
-                {"FILTRO_OCULTOS", "MODO_OCULTOS", "false"},
-                {"FILTRO_INTERNACIONAL", "MODO_INTERNACIONAL", "false"},
+        Object[][] criterios = {
+                {ChipConfig.CRITERIO_DESCONHECIDOS, true},
+                {ChipConfig.CRITERIO_OCULTOS, false},
+                {ChipConfig.CRITERIO_INTERNACIONAL, false},
+                {ChipConfig.CRITERIO_DDD, false},
         };
+
+        List<String> contaIds = new ArrayList<>();
+        if (contasAtuais.size() >= 2) {
+            for (SimAccountEntry conta : contasAtuais) contaIds.add(conta.id);
+        } else {
+            contaIds.add(null);
+        }
 
         boolean algumBloquear = false;
         boolean algumPerguntar = false;
-        for (String[] criterio : criterios) {
-            boolean habilitado = prefs.getBoolean(criterio[0], Boolean.parseBoolean(criterio[2]));
-            if (!habilitado) continue;
-            if ("PERGUNTAR".equals(prefs.getString(criterio[1], "BLOQUEAR"))) {
-                algumPerguntar = true;
-            } else {
-                algumBloquear = true;
+        for (String contaId : contaIds) {
+            for (Object[] criterio : criterios) {
+                String nome = (String) criterio[0];
+                boolean padrao = (boolean) criterio[1];
+                if (!ChipConfig.isFiltroAtivo(requireContext(), nome, contaId, padrao)) continue;
+                if (ChipConfig.getModo(requireContext(), nome, contaId) == CallDecisionEngine.Acao.PERGUNTAR) {
+                    algumPerguntar = true;
+                } else {
+                    algumBloquear = true;
+                }
             }
         }
 
